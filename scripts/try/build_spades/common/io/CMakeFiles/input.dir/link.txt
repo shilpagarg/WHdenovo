@@ -1,0 +1,2 @@
+/home/sg461/anaconda3/bin/ar qc libinput.a  CMakeFiles/input.dir/reads/parser.cpp.o CMakeFiles/input.dir/sam/read.cpp.o CMakeFiles/input.dir/sam/sam_reader.cpp.o
+/home/sg461/anaconda3/bin/ranlib libinput.a

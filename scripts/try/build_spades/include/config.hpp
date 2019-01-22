@@ -1,0 +1,8 @@
+#ifndef __SPADES_CONFIG_HPP__
+#define __SPADES_CONFIG_HPP__
+
+#define SPADES_USE_JEMALLOC
+/* #undef SPADES_USE_TCMALLOC */
+#define SPADES_DEBUG_LOGGING
+
+#endif // __SPADES_CONFIG_HPP__

@@ -1,0 +1,8 @@
+#ifndef __SPADES_CONFIG_HPP__
+#define __SPADES_CONFIG_HPP__
+
+#cmakedefine SPADES_USE_JEMALLOC
+#cmakedefine SPADES_USE_TCMALLOC
+#cmakedefine SPADES_DEBUG_LOGGING
+
+#endif // __SPADES_CONFIG_HPP__

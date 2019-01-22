@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/ext/src/ssw/ssw_cpp.cpp
+ssw/ssw_cpp.h
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/ext/src/ssw/ssw/ssw_cpp.h
+ssw/ssw.h
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/ext/src/ssw/ssw/ssw.h
+sstream
+-
+
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/../ext/include/ssw/ssw.h
+stdio.h
+-
+stdint.h
+-
+string.h
+-
+emmintrin.h
+-
+
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/../ext/include/ssw/ssw_cpp.h
+stdint.h
+-
+string
+-
+vector
+-
+

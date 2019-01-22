@@ -1,0 +1,7 @@
+#ifndef __SPADES_VERSION_HPP__
+#define __SPADES_VERSION_HPP__
+
+#define SPADES_GIT_REFSPEC "N/A"
+#define SPADES_GIT_SHA1 "N/A"
+
+#endif // __SPADES_VERSION_HPP__

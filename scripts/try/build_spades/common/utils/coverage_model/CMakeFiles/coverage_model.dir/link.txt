@@ -1,0 +1,2 @@
+/home/sg461/anaconda3/bin/ar qc libcoverage_model.a  CMakeFiles/coverage_model.dir/kmer_coverage_model.cpp.o
+/home/sg461/anaconda3/bin/ranlib libcoverage_model.a
