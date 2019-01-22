@@ -1,0 +1,2 @@
+/home/sg461/anaconda3/bin/ar qc libcityhash.a  CMakeFiles/cityhash.dir/city.cc.o
+/home/sg461/anaconda3/bin/ranlib libcityhash.a

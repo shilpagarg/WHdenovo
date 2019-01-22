@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/common/utils/mph_index/bitpair_vector.cpp
+bitpair_vector.hpp
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/common/utils/mph_index/bitpair_vector.hpp
+iostream
+-
+
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/common/utils/mph_index/bitpair_vector.hpp
+common.hpp
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/common/utils/mph_index/common.hpp
+vector
+-
+
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/common/utils/mph_index/common.hpp
+cstdint
+-
+iterator
+-
+memory
+-
+cassert
+-
+emphf_config.hpp
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/common/utils/mph_index/emphf_config.hpp
+
+/n/groups/church/shilpa/new/butter_ex/butter_ex/scripts/try/src/common/utils/mph_index/emphf_config.hpp
+

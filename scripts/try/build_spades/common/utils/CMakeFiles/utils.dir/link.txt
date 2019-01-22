@@ -1,0 +1,2 @@
+/home/sg461/anaconda3/bin/ar qc libutils.a  CMakeFiles/utils.dir/copy_file.cpp.o CMakeFiles/utils.dir/path_helper.cpp.o CMakeFiles/utils.dir/logger/logger_impl.cpp.o CMakeFiles/utils.dir/autocompletion.cpp.o
+/home/sg461/anaconda3/bin/ranlib libutils.a
