@@ -1,0 +1,177 @@
+#!/bin/bash
+# Description: this script is to create Illumina read profile from multiple fastq or gzipped fastq files
+# Author: Weichun Huang at <whduke@gmail.com>
+# Lastest update on Fri Apr 15 16:34:45 EDT 2016
+# License: GPL v3
+#---------------------------------------------------------------------------
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#---------------------------------------------------------------------------
+
+ext=fq
+nthreads=1
+if [[ $# -eq 3 ]];then
+       	outFile=$1
+	iDIR=$2
+	ext=$3
+       	if type nproc 2>/dev/null 1>&2; then
+	       	nthreads=`nproc`
+       	elif type sysctl 2>/dev/null 1>&2; then  
+		nthreads=`sysctl -n hw.ncpu`
+       	else
+	       	echo "warning: use only one threads as the program failed to detect #cores in the system" 
+		nthreads=1
+       	fi
+elif [[ $# -eq 4 ]];then
+       	outFile=$1
+	iDIR=$2
+	ext=$3
+       	nthreads=$4
+        re='^[0-9]+$'
+	if ! [[ $nthreads =~ $re ]] || (($nthreads <= 0)); then
+	       	echo "Error: number of cores must be a positive integer " >&2; exit 1
+       	fi
+else
+        echo "This tool is to create an Illumina read quality profile from multiple fastq or gzipped fastq files"
+	echo ""
+	echo "USAGE:"
+	echo "	./art_profiler_illumina output_profile_name input_fastq_dir fastq_filename_extension [max_number_threads]"
+	echo ""
+	echo "PARAMETERS:"
+       	echo "	output_profile_name:  the name of read quality profile to be generated"  
+       	echo "	input_fastq_dir:   the directory of input fastq or zipped fastq files"  
+       	echo "	fastq_filename_extension: fastq or gzipped fastq filename extension"
+       	echo "	max_number_threads:: maximum number of threads/cores to be used for the run (default: all cores)"
+	echo ""
+	echo "EXAMPLES:"
+	echo "	1) create hiseq2k profiles from all *.fq.gz in the directory fastq_dat_dir"
+	echo "		./art_profiler_illumina hiseq2k fastq_dat_dir fq.gz"
+	echo "	2) create miseq2500 profiles from all *.fq in the directory fastq_dat_dir"
+	echo "		./art_profiler_illumina miseq250 fastq_dat_dir fq"
+	echo "	3) create hiseq1k profiles from all *.fq in the directory fastq_dat_dir using 20 threads"
+	echo "		./art_profiler_illumina hiseq1k fastq_dat_dir fq 20"
+       	echo ""       
+	echo "NOTES: For paired-end fastq files, e.g., *.fq or *.fq.gz,"
+       	echo "       the filenames of the 1st reads must be *_1.fq/*_1.fq.gz, or *.1.fq/*.1.fq.gz"
+       	echo "       and those of the 2nd reads must be *_2.fq./*_2.fq.gz, or *.2.fq or *.2.fq.gz"
+       	echo ""       
+	echo "CONTACT: Weichun Huang at whduke@gmail.com"
+	exit 1
+fi
+
+if  [[ ! -e $iDIR ]]; then echo "Error: directory $iDIR does not exist"; exit 1; fi
+ls $iDIR/*.$ext 2>/dev/null 1>&2
+if [ $? -gt 0 ]; then echo "Error: no *.$ext fastq files in $iDIR"; exit 1;  fi
+
+pDIR=`dirname $0`
+export pDIR
+export ext;
+
+oList=
+of1st=
+of2nd=
+i=0
+k1=0
+k2=0
+for fq in $iDIR/*.$ext 
+do
+# using xargs instead
+#       	$pDIR/fastqReadAvg.pl $fq & 
+        t1=${fq%_1.$ext}	
+        t1=${t1%.1.$ext}	
+        t2=${fq%_2.$ext}	
+        t2=${t2%.2.$ext}	
+
+	if [[ $t1 != $fq ]];then 
+		of1st="$of1st ${fq#$iDIR\/}.txt"
+	       	k1=$((k1+1))
+	elif [[ $t2 != $fq ]];then 
+		of2nd="$of2nd ${fq#$iDIR\/}.txt"
+	       	k2=$((k2+1))
+	else
+	       	oList="$oList ${fq#$iDIR\/}.txt"
+	       	i=$((i+1))
+	fi
+done
+
+#thanks Lee Katz at <lkatz@cdc.gov> for suggesting using xargs
+ls -S $iDIR/*.$ext | xargs -P $nthreads -n 1 bash -c '
+  b=$(basename $0 .$ext);
+  if [ -e $b.$ext.txt ]; then
+	  echo "already processed the file $0"
+	  echo "remove $b.$ext.txt to re-process $0"
+	  exit 0;
+  fi
+  echo "processing $0"
+  $pDIR/fastqReadAvg.pl $0
+  if [ $? -gt 0 ]; then echo "Error in running fastqReadAvg.pl on $0"; exit 1; fi;
+'
+if [ $? -gt 0 ]; then 
+  echo "Error in processing at least one or more fastq files" 
+  exit 1 
+fi
+
+if [[ $i -ge 1 ]]; then
+       	if [[ $i -eq 1 ]]; then
+	       	mv $oList $outFile.freq.txt
+       	else 
+		$pDIR/summation.pl $oList $outFile.freq.txt
+		if [ $? -gt 0 ]; then exit 1; fi
+       	fi
+       	$pDIR/combinedAvg.pl $outFile.freq.txt
+	if [ $? -gt 0 ]; then exit 1; fi;
+       	$pDIR/empDist.pl $outFile.freq.txt $outFile.txt
+       	if [[ $? == 0 ]]; then
+	       	echo "The read profile file $outFile.txt has been created"
+	else 
+		exit 1 
+       	fi
+       	rm -fr $oList $outFile.freq.txt
+fi	
+
+if [[ $k1 -ge 1 ]]; then
+       	if [[ $k1 -eq 1 ]]; then
+	       	mv $of1st ${outFile}R1.freq.txt
+       	else 
+		$pDIR/summation.pl $of1st ${outFile}R1.freq.txt
+	if [ $? -gt 0 ]; then exit 1; fi;
+       	fi
+       	$pDIR/combinedAvg.pl ${outFile}R1.freq.txt
+	if [ $? -gt 0 ]; then exit 1; fi;
+       	$pDIR/empDist.pl ${outFile}R1.freq.txt ${outFile}R1.txt
+       	if [[ $? == 0 ]]; then
+	       	echo "The read profile file ${outFile}R1.txt has been created"
+	else 
+		exit 1; 
+       	fi
+       	rm -fr $of1st ${outFile}R1.freq.txt
+fi
+
+if [[ $k2 -ge 1 ]]; then
+       	if [[ $k2 -eq 1 ]]; then
+	       	mv $of2nd ${outFile}R2.freq.txt
+       	else 
+		$pDIR/summation.pl $of2nd ${outFile}R2.freq.txt
+		if [ $? -gt 0 ]; then exit 1; fi;
+       	fi
+       	$pDIR/combinedAvg.pl ${outFile}R2.freq.txt
+	if [ $? -gt 0 ]; then exit 1; fi;
+       	$pDIR/empDist.pl ${outFile}R2.freq.txt ${outFile}R2.txt
+       	if [[ $? == 0 ]]; then
+	       	echo "The read profile file ${outFile}R2.txt has been created"
+	else 
+		exit 1; 
+       	fi
+       	rm -fr $of2nd ${outFile}R2.freq.txt
+fi
+
