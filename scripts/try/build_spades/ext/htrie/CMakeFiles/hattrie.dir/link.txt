@@ -1,2 +1,0 @@
-/home/sg461/anaconda3/bin/ar qc libhattrie.a  CMakeFiles/hattrie.dir/ahtable.c.o CMakeFiles/hattrie.dir/hat-trie.c.o CMakeFiles/hattrie.dir/misc.c.o CMakeFiles/hattrie.dir/murmurhash3.c.o
-/home/sg461/anaconda3/bin/ranlib libhattrie.a

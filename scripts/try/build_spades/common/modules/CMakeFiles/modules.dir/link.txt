@@ -1,2 +1,0 @@
-/home/sg461/anaconda3/bin/ar qc libmodules.a  CMakeFiles/modules.dir/genome_consistance_checker.cpp.o CMakeFiles/modules.dir/alignment/bwa_index.cpp.o
-/home/sg461/anaconda3/bin/ranlib libmodules.a

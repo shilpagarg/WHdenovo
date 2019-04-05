@@ -1,2 +1,0 @@
-/home/sg461/anaconda3/bin/ar qc libssw.a  CMakeFiles/ssw.dir/ssw.c.o CMakeFiles/ssw.dir/ssw_cpp.cpp.o
-/home/sg461/anaconda3/bin/ranlib libssw.a
