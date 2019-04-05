@@ -1,2 +1,0 @@
-/home/sg461/anaconda3/bin/ar qc libstages.a  CMakeFiles/stages.dir/construction.cpp.o CMakeFiles/stages.dir/simplification.cpp.o
-/home/sg461/anaconda3/bin/ranlib libstages.a

@@ -1,2 +1,0 @@
-/home/sg461/anaconda3/bin/ar qc libpipeline.a  CMakeFiles/pipeline.dir/stage.cpp.o CMakeFiles/pipeline.dir/config_struct.cpp.o CMakeFiles/pipeline.dir/genomic_info_filler.cpp.o CMakeFiles/pipeline.dir/library.cpp.o
-/home/sg461/anaconda3/bin/ranlib libpipeline.a
