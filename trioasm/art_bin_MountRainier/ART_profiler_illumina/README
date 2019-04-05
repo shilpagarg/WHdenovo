@@ -1,0 +1,25 @@
+ART_PROFILER_ILLUMINA, Weichun Huang<whduke@gmail.com>
+ABOUT 
+
+	This tool is to create an ART illumina read quality profile from Illumina sequencing data
+	in multiple fastq or gzipped fastq files
+USAGE:
+	./art_profiler_illumina output_profile_name input_fastq_dir fastq_filename_extension [max_number_threads]
+
+PARAMETERS:
+	output_profile_name:  the name of read quality profile to be generated
+	input_fastq_dir:   the directory of input fastq or zipped fastq files
+	fastq_filename_extension: fastq or gzipped fastq filename extension
+	max_number_threads:: maximum number of threads/cores to be used for the run (default: all cores)
+
+EXAMPLES:
+	1) create hiseq2k profiles from all *.fq.gz in the directory fastq_dat_dir
+		./art_profiler_illumina HiSeq2k fastq_dat_dir fq.gz
+	2) create miseq2500 profiles from all *.fq in the directory fastq_dat_dir
+		./art_profiler_illumina MiSeq250 fastq_dat_dir fq
+	3) create hiseq1k profiles from all *.fq in the directory fastq_dat_dir using 20 threads
+		./art_profiler_illumina HiSeq1k fastq_dat_dir fq 20
+       	       
+NOTES: 
+	For paired-end fastq files, e.g., *.fq or *.fq.gz, the filenames of the 1st reads must be *_1.fq/*_1.fq.gz,
+	or *.1.fq/*.1.fq.gz, and those of the 2nd reads must be *_2.fq/*_2.fq.gz, or *.2.fq/*.2.fq.gz
