@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgqf.a  CMakeFiles/gqf.dir/gqf.c.o
+/usr/bin/ranlib libgqf.a

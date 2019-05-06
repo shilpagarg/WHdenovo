@@ -18,8 +18,8 @@
 
 #include "modules/simplification/tip_clipper.hpp"
 #include "modules/simplification/complex_tip_clipper.hpp"
-//#include "modules/simplification/bulge_remover.hpp"
-//#include "modules/simplification/complex_bulge_remover.hpp"
+#include "modules/simplification/bulge_remover.hpp"
+#include "modules/simplification/complex_bulge_remover.hpp"
 #include "modules/simplification/erroneous_connection_remover.hpp"
 #include "modules/simplification/relative_coverage_remover.hpp"
 #include "modules/simplification/mf_ec_remover.hpp"
@@ -376,8 +376,8 @@ private:
     DECL_LOGGER("LowCoverageEdgeRemovingAlgorithm");
 };
 
-//template<class Graph>
-/*AlternativesAnalyzer<Graph> ParseBRConfig(const Graph &g,
+template<class Graph>
+AlternativesAnalyzer<Graph> ParseBRConfig(const Graph &g,
                                           const config::debruijn_config::simplification::bulge_remover &config) {
     size_t max_length = LengthThresholdFinder::MaxBulgeLength(
         g.k(), config.max_bulge_length_coefficient,
@@ -392,7 +392,7 @@ private:
                                        config.max_relative_delta,
                                        config.max_number_edges,
                                        config.dijkstra_vertex_limit);
-}*/
+}
 
 template<class Graph>
 AlgoPtr<Graph> SelfConjugateEdgeRemoverInstance(Graph &g, const string &condition_str,
@@ -467,8 +467,8 @@ AlgoPtr<Graph> RelativelyLowCoverageDisconnectorInstance(Graph &g,
             nullptr);
 }
 
-//template<class Graph>
-/*AlgoPtr<Graph> ComplexBRInstance(
+template<class Graph>
+AlgoPtr<Graph> ComplexBRInstance(
     Graph &g,
     config::debruijn_config::simplification::complex_bulge_remover cbr_config,
     const SimplifInfoContainer &info) {
@@ -478,7 +478,7 @@ AlgoPtr<Graph> RelativelyLowCoverageDisconnectorInstance(Graph &g,
     size_t max_diff = cbr_config.max_length_difference;
     return std::make_shared<omnigraph::complex_br::ComplexBulgeRemover<Graph>>(g, max_length,
                                                                                max_diff, info.chunk_cnt());
-}*/
+}
 
 template<class Graph>
 AlgoPtr<Graph> ComplexTipClipperInstance(Graph &g,
@@ -619,8 +619,8 @@ AlgoPtr<Graph> TopologyTipClipperInstance(
                               condition, info, removal_handler, /*track changes*/false);
 }
 
-//template<class Graph>
-/*AlgoPtr<Graph> BRInstance(Graph &g,
+template<class Graph>
+AlgoPtr<Graph> BRInstance(Graph &g,
                           const config::debruijn_config::simplification::bulge_remover &br_config,
                           const SimplifInfoContainer &info,
                           EdgeRemovalHandlerF<Graph> removal_handler = nullptr) {
@@ -640,7 +640,7 @@ AlgoPtr<Graph> TopologyTipClipperInstance(
                 alternatives_analyzer,
                 nullptr,
                 removal_handler,
-                track_changes true);
+                /*track_changes*/true);
     } else {
         INFO("Creating br instance");
         return make_shared<omnigraph::BulgeRemover<Graph>>(g,
@@ -648,9 +648,9 @@ AlgoPtr<Graph> TopologyTipClipperInstance(
                 alternatives_analyzer,
                 nullptr,
                 removal_handler,
-                track_changes true);
+                /*track_changes*/true);
     }
-}*/
+}
 
 template<class Graph>
 AlgoPtr<Graph> LowFlankDisconnectorInstance(Graph &g,

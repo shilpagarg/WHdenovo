@@ -110,14 +110,14 @@ private:
     const size_t bulge_length_;
 
 public:
-    /*ComponentClassifier(const Graph &g, const ColorHandler<Graph> &coloring,
+    ComponentClassifier(const Graph &g, const ColorHandler<Graph> &coloring,
             size_t bulge_length) :
             g_(g), coloring_(coloring), bulge_length_(bulge_length) {
     }
 
     ComponentClassifier(const Graph &g, const ColorHandler<Graph> &coloring) :
             g_(g), coloring_(coloring), bulge_length_(g_.k() * 1000000) {
-    }*/
+    }
 
     TColorSet GetColour(EdgeId edge) const {
         return coloring_.Color(edge);
@@ -185,7 +185,7 @@ public:
         return GetColour(edges[0]) == colour;
     }
 
-    /*bool CheckBulge(const vector<VertexId> &component) const {
+    bool CheckBulge(const vector<VertexId> &component) const {
         if (component.size() != 2)
             return false;
         vector<EdgeId> edges01 = g_.GetEdgesBetween(component[0], component[1]);
@@ -196,7 +196,7 @@ public:
         return (edges01.size() == 0 || edges10.size() == 0) && edges.size() == 2
                 && g_.length(edges[0]) < bulge_length_
                 && g_.length(edges[1]) < bulge_length_;
-    }*/
+    }
 
     size_t EdgeNumber(const vector<VertexId> &component) const {
         size_t result = 0;
@@ -250,9 +250,9 @@ public:
                 return component_type::single_red;
             if (CheckIsolated(kBlueColorSet, component))
                 return component_type::single_blue;
-            /*if (CheckBulge(component)) {
+            if (CheckBulge(component)) {
                 return component_type::simple_bulge;
-            }*/
+            }
             return component_type::complex_misassembly;
         }
         if (CheckMonochrome(component))

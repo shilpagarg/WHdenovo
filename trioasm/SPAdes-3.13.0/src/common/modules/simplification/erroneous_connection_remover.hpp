@@ -19,10 +19,8 @@
 #include "math/xmath.h"
 #include "assembly_graph/dijkstra/dijkstra_helper.hpp"
 #include "assembly_graph/core/coverage.hpp"
-#include "assembly_graph/paths/path_processor.hpp"
 #include "assembly_graph/graph_support/detail_coverage.hpp"
 #include "modules/simplification/topological_edge_conditions.hpp"
-#include "modules/simplification/bulge_remover.hpp"
 
 namespace omnigraph {
 

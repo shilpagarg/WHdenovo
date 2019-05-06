@@ -1,0 +1,36 @@
+Command line: ./spades.py	--test	
+
+System information:
+  SPAdes version: 3.13.0
+  Python version: 3.7.3
+  OS: Linux-4.4.0-17134-Microsoft-x86_64-with-debian-jessie-sid
+
+Output dir: /mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/spades_test
+Mode: read error correction and assembling
+Debug mode is turned OFF
+
+Dataset parameters:
+  Multi-cell mode (you should set '--sc' flag if input data was obtained with MDA (single-cell) technology or --meta flag if processing metagenomic dataset)
+  Reads:
+    Library number: 1, library type: paired-end
+      orientation: fr
+      left reads: ['/mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/test_dataset/ecoli_1K_1.fq.gz']
+      right reads: ['/mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/test_dataset/ecoli_1K_2.fq.gz']
+      interlaced reads: not specified
+      single reads: not specified
+      merged reads: not specified
+Read error correction parameters:
+  Iterations: 1
+  PHRED offset will be auto-detected
+  Corrected reads will be compressed
+Assembly parameters:
+  k: automatic selection based on read length
+  Repeat resolution is enabled
+  Mismatch careful mode is turned OFF
+  MismatchCorrector will be SKIPPED
+  Coverage cutoff is turned OFF
+Other parameters:
+  Dir for temp files: /mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/spades_test/tmp
+  Threads: 16
+  Memory limit (in Gb): 7
+

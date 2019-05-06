@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgfa1.a  CMakeFiles/gfa1.dir/gfa.c.o
+/usr/bin/ranlib libgfa1.a

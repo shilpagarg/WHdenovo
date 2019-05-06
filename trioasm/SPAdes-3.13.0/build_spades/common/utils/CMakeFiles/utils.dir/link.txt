@@ -1,0 +1,2 @@
+/usr/bin/ar qc libutils.a  CMakeFiles/utils.dir/memory_limit.cpp.o CMakeFiles/utils.dir/filesystem/copy_file.cpp.o CMakeFiles/utils.dir/filesystem/path_helper.cpp.o CMakeFiles/utils.dir/filesystem/temporary.cpp.o CMakeFiles/utils.dir/logger/logger_impl.cpp.o
+/usr/bin/ranlib libutils.a
