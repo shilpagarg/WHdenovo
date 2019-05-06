@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgraphio.a  CMakeFiles/graphio.dir/gfa_reader.cpp.o CMakeFiles/graphio.dir/gfa_writer.cpp.o CMakeFiles/graphio.dir/fastg_writer.cpp.o
+/usr/bin/ranlib libgraphio.a

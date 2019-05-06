@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/ext/src/ssw/ssw.c
+emmintrin.h
+-
+stdint.h
+-
+stdlib.h
+-
+stdio.h
+-
+string.h
+-
+math.h
+-
+ssw/ssw.h
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/ext/src/ssw/ssw/ssw.h
+
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/src/../ext/include/ssw/ssw.h
+stdio.h
+-
+stdint.h
+-
+string.h
+-
+emmintrin.h
+-
+

@@ -36,7 +36,7 @@ public:
     PathAnalyzer(const Graph& g): g_(g) {
     }
 
-    void RemoveTrivial(const BidirectionalPath& path, std::set<size_t>& to_exclude, bool exclude_bulges = false) const {
+    void RemoveTrivial(const BidirectionalPath& path, std::set<size_t>& to_exclude, bool exclude_bulges = true) const {
         if (exclude_bulges) {
             ExcludeTrivialWithBulges(path, to_exclude);
         } else {

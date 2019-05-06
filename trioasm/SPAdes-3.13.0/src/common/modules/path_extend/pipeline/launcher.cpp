@@ -248,9 +248,9 @@ void PathExtendLauncher::RemoveOverlapsAndArtifacts(PathContainer &paths,
     }
 
     //TODO do we still need it?
-    //if (params_.avoid_rc_connections) {
-    //    FilterInterstandBulges(paths);
-    //}
+    if (params_.avoid_rc_connections) {
+        FilterInterstandBulges(paths);
+    }
     resolver.AddUncoveredEdges(paths, cover_map);
 
     paths.SortByLength();

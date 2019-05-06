@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmodules.a  CMakeFiles/modules.dir/genome_consistance_checker.cpp.o CMakeFiles/modules.dir/alignment/gap_info.cpp.o CMakeFiles/modules.dir/alignment/bwa_index.cpp.o
+/usr/bin/ranlib libmodules.a

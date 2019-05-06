@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/ext/src/gqf/gqf.c
+stdlib.h
+-
+assert.h
+-
+string.h
+-
+inttypes.h
+-
+stdio.h
+-
+unistd.h
+-
+math.h
+-
+time.h
+-
+sys/mman.h
+-
+sys/stat.h
+-
+fcntl.h
+-
+gqf/gqf.h
+-
+
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/src/../ext/include/gqf/gqf.h
+inttypes.h
+-
+pthread.h
+-
+stdbool.h
+-
+

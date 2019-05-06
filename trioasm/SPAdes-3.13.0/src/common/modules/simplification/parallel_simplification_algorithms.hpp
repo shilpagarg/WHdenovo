@@ -8,7 +8,7 @@
 #pragma once
 
 #include "cleaner.hpp"
-//#include "bulge_remover.hpp"
+#include "bulge_remover.hpp"
 #include "utils/standard_base.hpp"
 #include "assembly_graph/graph_support/graph_processing_algorithm.hpp"
 #include "assembly_graph/graph_support/parallel_processing.hpp"
@@ -116,8 +116,8 @@ class ParallelSimpleBRFunctor {
         return l1 <= l2 + delta && l2 <= l1 + delta;
     }
 
-    /*EdgeId Alternative(EdgeId e, const vector<EdgeId>& edges) const {
-        size_t delta = CountMaxDifference(max_delta_, g_.length(e), max_relative_delta_);
+    EdgeId Alternative(EdgeId e, const vector<EdgeId>& edges) const {
+        size_t delta = omnigraph::CountMaxDifference(max_delta_, g_.length(e), max_relative_delta_);
         for (auto it = edges.rbegin(); it != edges.rend(); ++it) {
             EdgeId candidate = *it;
             if (g_.EdgeEnd(candidate) == g_.EdgeEnd(e) && candidate != e && candidate != g_.conjugate(e)
@@ -142,7 +142,7 @@ class ParallelSimpleBRFunctor {
             }
         }
         return false;
-    }*/
+    }
 
     vector<VertexId> MultiEdgeDestinations(VertexId v) const {
         vector<VertexId> answer;
@@ -166,7 +166,7 @@ class ParallelSimpleBRFunctor {
         }
     }
 
-    /*void RemoveBulges(VertexId v) {
+    void RemoveBulges(VertexId v) {
         bool flag = true;
         while (flag) {
             vector<EdgeId> edges(g_.out_begin(v), g_.out_end(v));
@@ -175,7 +175,7 @@ class ParallelSimpleBRFunctor {
             sort(edges.begin(), edges.end(), omnigraph::CoverageComparator<Graph>(g_));
             flag = ProcessEdges(edges);
         }
-    }*/
+    }
 
     bool CheckVertex(VertexId v) const {
         VertexLockT lock(v);
@@ -217,7 +217,7 @@ public:
             if (CheckVertex(v) && CheckVertex(g_.conjugate(dest))) {
                 VertexLockT lock1(v);
                 VertexLockT lock2(dest);
-                //RemoveBulges(v);
+                RemoveBulges(v);
             }
         }
         return false;

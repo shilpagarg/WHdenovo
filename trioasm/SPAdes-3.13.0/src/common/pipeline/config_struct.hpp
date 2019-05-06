@@ -196,7 +196,7 @@ struct debruijn_config {
             std::string condition;
         };
 
-        /*struct bulge_remover {
+        struct bulge_remover {
             bool enabled;
             bool main_iteration_only;
             double max_bulge_length_coefficient;
@@ -211,7 +211,7 @@ struct debruijn_config {
             size_t buff_size;
             double buff_cov_diff;
             double buff_cov_rel_diff;
-        };*/
+        };
 
         struct erroneous_connections_remover {
             std::string condition;
@@ -264,11 +264,11 @@ struct debruijn_config {
             size_t max_length_any_cov;
         };
 
-        /*struct complex_bulge_remover {
+        struct complex_bulge_remover {
             bool enabled;
             double max_relative_length;
             size_t max_length_difference;
-        };*/
+        };
 
         struct hidden_ec_remover {
             bool enabled;
@@ -312,7 +312,7 @@ struct debruijn_config {
         dead_end_clipper dead_end;
         complex_tip_clipper complex_tc;
         topology_tip_clipper ttc;
-        //bulge_remover br;
+        bulge_remover br;
         erroneous_connections_remover ec;
         relative_coverage_ec_remover rcec;
         relative_coverage_comp_remover rcc;
@@ -322,11 +322,11 @@ struct debruijn_config {
         interstrand_ec_remover isec;
         max_flow_ec_remover mfec;
         isolated_edge_remover ier;
-        //complex_bulge_remover cbr;
+        complex_bulge_remover cbr;
         hidden_ec_remover her;
         low_covered_edge_remover lcer;
         tip_clipper final_tc;
-        //bulge_remover final_br;
+        bulge_remover final_br;
 
         init_cleaning init_clean;
     };
