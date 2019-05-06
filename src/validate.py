@@ -22,9 +22,9 @@ subprocess.call('cat %s/*.reads > %s/all.reads'%(path, path), shell = True)
 subprocess.call('cat %s/*.allreads > %s/all.allreads'%(path, path), shell = True)
 
 
-print('=== For .reads ===')
-subprocess.call('python src/compute_read_partitioning_test.py %s/all.reads'%path, shell = True)
-print('=== For .allreads ===')
+#print('=== For .reads ===')
+#subprocess.call('python src/compute_read_partitioning_test.py %s/all.reads'%path, shell = True)
+#print('=== For .allreads ===')
 subprocess.call('python src/compute_read_partitioning_test_allreads.py %s/all.allreads'%path, shell = True)
 
 subprocess.call("cat %s/all.allreads | cut -d' ' -f1 | sort -u | uniq > %s/all.tmpreads"%(path, path), shell = True)
