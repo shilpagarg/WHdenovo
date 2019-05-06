@@ -30,12 +30,15 @@ pacbio.add_argument('fasta', type = str, nargs = 6,
 
 args = parser.parse_args()
 
+pid = os.getpid()
+
 family = ['mom1', 'mom2', 'dad1', 'dad2', 'child1', 'child2']
 # ILLUMINA part
 if args.subparser == 'illumina':
 
 	mom1FA = args.fasta
 	het = args.het
+	illuminaOutput = str(pid) + '_' + args.dir
 	illuminaOutput = os.path.abspath(args.dir)
 	if not os.path.exists(mom1FA):
 		raise FileNotFoundError(mom1FA + ' not found.')
@@ -53,22 +56,28 @@ if args.subparser == 'illumina':
 	# simulate illumina reads
 	art = 'trioasm/art_bin_MountRainier/art_illumina'
 	for i in family:
-		subprocess.call('%s  -ss HSXn -sam -i %s/%s.het%s.cov30.fasta -rs 777 -p -l 150 -f 15 -m 200 -s 10 -o %s/%s.het%s.cov30_'%(art, illuminaOutput, i, het, illuminaOutput, i, het), shell = True)
+		subprocess.call('%s  -ss HSXn -sam -i %s/%s.het%s.cov30.fasta -p -l 150 -f 15 -m 200 -s 10 -o %s/%s.het%s.cov30_'%(art, illuminaOutput, i, het, illuminaOutput, i, het), shell = True, stdout=subprocess.PIPE)
 
 	# Combine left and right reads per individual.
 	for i in ['mom', 'dad', 'child']:
 		subprocess.call('cat %s/%s1.het%s.cov30_1.fq %s/%s2.het%s.cov30_1.fq > %s/%s.het%s.cov30_1.fq'%(illuminaOutput, i, het, illuminaOutput, i, het, illuminaOutput, i, het), shell = True)
 		subprocess.call('cat %s/%s1.het%s.cov30_2.fq %s/%s2.het%s.cov30_2.fq > %s/%s.het%s.cov30_2.fq'%(illuminaOutput, i, het, illuminaOutput, i, het, illuminaOutput, i, het), shell = True)
+	print('WHAT YOU NEED FOR PACBIO SIMULATION: ')
+	print('%s/mom1.het%s.cov30.fasta %s/mom2.het%s.cov30.fasta %s/dad1.het%s.cov30.fasta %s/dad2.het%s.cov30.fasta %s/child1.het%s.cov30.fasta %s/child2.het%s.cov30.fasta' % (illuminaOutput, het, illuminaOutput, het, illuminaOutput, het, illuminaOutput, het, illuminaOutput, het, illuminaOutput, het))
+	print('WHAT YOU NEED FOR ASSEMBLING: ')
+	print('%s/mom.het%s.cov30_1.fq\t%s/dad.het%s.cov30_1.fq\t%s/child.het%s.cov30_1.fq'%(illuminaOutput, het, illuminaOutput, het, illuminaOutput, het))
+	print('%s/mom.het%s.cov30_2.fq\t%s/dad.het%s.cov30_2.fq\t%s/child.het%s.cov30_2.fq'%(illuminaOutput, het, illuminaOutput, het, illuminaOutput, het))
 
 # PACBIO part
 elif args.subparser == 'pacbio':
 	FAs = args.fasta
 	fq = args.fastq
 	halfCov = args.coverage / 2
-	outputDir = os.path.abspath(args.dir)
+	illumina_pid = FAs[0].split('_')[0]
+	outputDir = illumina_pid + '_' + args.dir
 	subprocess.run('mkdir ' + outputDir, shell = True)
 	for i in range(6):
-		a = subprocess.call('pbsim --seed 10 --prefix %s/%s --depth %d --sample-fastq %s %s > pbsim.log 2>&1'%(outputDir, family[i], halfCov, fq, FAs[i]), shell = True)
+		a = subprocess.call('pbsim --seed 10 --prefix %s/%s --depth %d --sample-fastq %s %s > %s/pbsim.log 2>&1'%(outputDir, family[i], halfCov, fq, FAs[i], outputDir), shell = True)
 		subprocess.call("awk 'NR%%4==1 {printf(\"%%s_%s\\n\",$0)} NR%%4!=1 {print}\\' %s/%s_0001.fastq > %s/pacbio_%s.fastq" % (family[i], outputDir, family[i], outputDir, family[i]), shell = True)
 		print('%s/pacbio_%s.fastq'%(outputDir, family[i]))
 		if a != 0:
