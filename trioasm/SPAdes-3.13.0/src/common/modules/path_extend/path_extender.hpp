@@ -1203,13 +1203,13 @@ protected:
             return true;
         }
         else if (candidates.size() == 2) {
-            /* //Check for bulge
+             //Check for bulge
             auto v = g_.EdgeStart(candidates.front().e_);
             auto u = g_.EdgeEnd(candidates.front().e_);
             for (auto edge : candidates) {
                 if (v != g_.EdgeStart(edge.e_) || u != g_.EdgeEnd(edge.e_))
                     return false;
-            }*/
+            }
 
             //Creating new paths for other than new candidate.
             for (size_t i = 1; i < candidates.size(); ++i) {

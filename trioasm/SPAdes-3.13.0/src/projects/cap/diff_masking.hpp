@@ -74,10 +74,10 @@ void RefineGP(gp_t& gp, size_t delta = 5) {
     //br_config.max_relative_coverage = 1.2;
     //br_config.max_delta = double(delta);
     //br_config.max_relative_delta = 0.1;
-    /*
+
     INFO("Removing bulges");
     debruijn::simplification::RemoveBulges(gp.g, br_config);
-    */
+
     INFO("Remapped " << gp.kmer_mapper.size() << " k-mers");
 
     debruijn_config::simplification::complex_bulge_remover cbr_config;

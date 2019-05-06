@@ -255,9 +255,9 @@ public:
                 ComplexTipClipperInstance(gp_.g, simplif_cfg_.complex_tc, info_container_, set_removal_handler_f),
                 "Complex tip clipper");
 
-        /*algo.AddAlgo(
+        algo.AddAlgo(
                 ComplexBRInstance(gp_.g, simplif_cfg_.cbr, info_container_),
-                "Complex bulge remover");*/
+                "Complex bulge remover");
 
         algo.AddAlgo(
                 TipClipperInstance(g_, simplif_cfg_.tc,
@@ -269,15 +269,15 @@ public:
                                    info_container_, removal_handler_),
                 "Final tip clipper");
 
-        /*algo.AddAlgo(
+        algo.AddAlgo(
                 BRInstance(g_, simplif_cfg_.br,
                                    info_container_, removal_handler_),
-                "Bulge remover");*/
+                "Bulge remover");
 
-        /*algo.AddAlgo(
+        algo.AddAlgo(
                 BRInstance(g_, simplif_cfg_.final_br,
                                    info_container_, removal_handler_),
-                "Final bulge remover");*/
+                "Final bulge remover");
 
         //TODO need better configuration
         if (info_container_.mode() == config::pipeline_type::meta) {
@@ -368,8 +368,8 @@ public:
                             "Tip clipper");
         algo_tc_br->AddAlgo(DeadEndInstance(g_, simplif_cfg_.dead_end, info_container_, removal_handler_),
                             "Dead end clipper");
-        /*algo_tc_br->AddAlgo(BRInstance(g_, simplif_cfg_.br, info_container_, removal_handler_),
-                            "Bulge remover");*/
+        algo_tc_br->AddAlgo(BRInstance(g_, simplif_cfg_.br, info_container_, removal_handler_),
+                            "Bulge remover");
 
 //        algo.AddAlgo(
 //                RelativelyLowCoverageDisconnectorInstance(gp_.g, gp_.flanking_cov,

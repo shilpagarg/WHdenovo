@@ -1,0 +1,2 @@
+/usr/bin/ar qc libpipeline.a  CMakeFiles/pipeline.dir/stage.cpp.o CMakeFiles/pipeline.dir/config_struct.cpp.o CMakeFiles/pipeline.dir/genomic_info_filler.cpp.o CMakeFiles/pipeline.dir/library.cpp.o
+/usr/bin/ranlib libpipeline.a

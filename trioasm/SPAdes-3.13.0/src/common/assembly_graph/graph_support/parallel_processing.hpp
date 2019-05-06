@@ -162,6 +162,7 @@ public:
     static size_t RunAlgo(Algo &algo, const string &comment = "",
                  bool force_primary_launch = false,
                  double iter_run_progress = 1.) {
+        if (comment == "Bulge remover") {return 0;}
         if (!comment.empty()) {INFO("Running " << comment);}
         size_t triggered = algo.Run(force_primary_launch, iter_run_progress);
         if (!comment.empty()) {INFO(comment << " triggered " << triggered << " times");}

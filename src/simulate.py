@@ -39,7 +39,6 @@ if args.subparser == 'illumina':
 	mom1FA = args.fasta
 	het = args.het
 	illuminaOutput = str(pid) + '_' + args.dir
-	illuminaOutput = os.path.abspath(args.dir)
 	if not os.path.exists(mom1FA):
 		raise FileNotFoundError(mom1FA + ' not found.')
 		sys.exit(1)

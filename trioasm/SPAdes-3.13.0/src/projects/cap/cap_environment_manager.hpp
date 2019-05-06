@@ -155,7 +155,7 @@ class CapEnvironmentManager {
     //br_config.max_relative_coverage = 1.2;
     //br_config.max_delta = delta;
     //br_config.max_relative_delta = 0.1;
-    /*
+
     INFO("Removing bulges");
 
     BulgeRemoverCallbackToCoordinatesHandlerAdapter<Graph> adapter(
@@ -167,7 +167,7 @@ class CapEnvironmentManager {
     //omp_set_num_threads(1);
     debruijn::simplification::RemoveBulges(gp.g, br_config, projecting_callback);
     //omp_set_num_threads(4);
-    */
+
     INFO("Remapped " << gp.kmer_mapper.size() << " k-mers");
 
     /*

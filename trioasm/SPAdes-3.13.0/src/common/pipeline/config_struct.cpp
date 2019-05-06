@@ -214,7 +214,7 @@ void load(debruijn_config::construction& con,
     load(con.early_tc, pt, "early_tip_clipper", complete);
 }
 
-/*void load(debruijn_config::simplification::bulge_remover& br,
+void load(debruijn_config::simplification::bulge_remover& br,
           boost::property_tree::ptree const& pt, bool complete) {
   using config_common::load;
 
@@ -233,7 +233,7 @@ void load(debruijn_config::construction& con,
   load(br.buff_size,                        pt,     "buff_size", complete);
   load(br.buff_cov_diff,                    pt,     "buff_cov_diff", complete);
   load(br.buff_cov_rel_diff,                pt,     "buff_cov_rel_diff", complete);
-}*/
+}
 
 void load(debruijn_config::simplification::complex_tip_clipper &ctc,
           boost::property_tree::ptree const &pt, bool complete) {
@@ -295,14 +295,14 @@ void load(debruijn_config::simplification::init_cleaning& init_clean,
   load(init_clean.disconnect_flank_cov, pt, "disconnect_flank_cov", complete);
 }
 
-/*void load(debruijn_config::simplification::complex_bulge_remover& cbr,
+void load(debruijn_config::simplification::complex_bulge_remover& cbr,
           boost::property_tree::ptree const& pt, bool complete) {
   using config_common::load;
 
   load(cbr.enabled, pt, "enabled");
   load(cbr.max_relative_length, pt, "max_relative_length", complete);
   load(cbr.max_length_difference, pt, "max_length_difference", complete);
-}*/
+}
 
 void load(debruijn_config::simplification::erroneous_connections_remover& ec,
           boost::property_tree::ptree const& pt, bool /*complete*/) {
@@ -563,7 +563,7 @@ void load(debruijn_config::simplification& simp,
   load(simp.dead_end, pt, "dead_end", complete); // dead end:
   load(simp.ttc, pt, "ttc", complete); // topology tip clipper:
   load(simp.complex_tc, pt, "complex_tc", complete); // complex tip clipper:
-  //load(simp.br, pt, "br", complete); // bulge remover:
+  load(simp.br, pt, "br", complete); // bulge remover:
   load(simp.ec, pt, "ec", complete); // erroneous connections remover:
   load(simp.rcec, pt, "rcec", complete); // relative coverage erroneous connections remover
   load(simp.rcc, pt, "rcc", complete); // relative coverage component remover:
@@ -573,11 +573,11 @@ void load(debruijn_config::simplification& simp,
   load(simp.isec, pt, "isec", complete); // interstrand erroneous connections remover (thorn remover):
   load(simp.mfec, pt, "mfec", complete); // max flow erroneous connections remover:
   load(simp.ier, pt, "ier", complete); // isolated edges remover
-  //load(simp.cbr, pt, "cbr", complete); // complex bulge remover
+  load(simp.cbr, pt, "cbr", complete); // complex bulge remover
   load(simp.her, pt, "her", complete); // hidden ec remover
   load(simp.init_clean, pt, "init_clean", complete); // presimplification
   load(simp.final_tc, pt, "final_tc", complete);
-  //load(simp.final_br, pt, "final_br", complete);
+  load(simp.final_br, pt, "final_br", complete);
 }
 
 void load(debruijn_config::info_printer& printer,

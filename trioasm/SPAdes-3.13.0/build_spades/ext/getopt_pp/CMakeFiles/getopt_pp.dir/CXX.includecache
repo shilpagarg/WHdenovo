@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/ext/src/getopt_pp/getopt_pp.cpp
+unistd.h
+-
+getopt_pp/getopt_pp.h
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/ext/src/getopt_pp/getopt_pp/getopt_pp.h
+
+/home/ec2-user/whdenovo-v0424/trioasm/SPAdes-3.13.0/src/../ext/include/getopt_pp/getopt_pp.h
+string
+-
+vector
+-
+map
+-
+sstream
+-
+

@@ -273,7 +273,7 @@ public:
 };
 
 template<class Graph>
-//void SimplifyGraph(Graph& g, size_t br_delta) {
+void SimplifyGraph(Graph& g, size_t br_delta) {
     //outdated
     //debruijn_config::simplification::bulge_remover br_config;
     //br_config.max_bulge_length_coefficient = 20;
@@ -281,15 +281,15 @@ template<class Graph>
     //br_config.max_relative_coverage = 1.2;
     //br_config.max_delta = br_delta;
     //br_config.max_relative_delta = 0.1;
-    //INFO("Removing bulges");
-    //RemoveBulges(g, br_config);
+    INFO("Removing bulges");
+    RemoveBulges(g, br_config);
 
 //        debruijn_config::simplification::tip_clipper tc;
 //        tc.max_coverage = 1000;
 //        tc.max_relative_coverage = 1000;
 //        tc.max_tip_length_coefficient = 6;
 //        ClipTips(gp.g, tc, 10 * gp.g.k());
-//}
+}
 
 template<class gp_t>
 void SplitAndColorGraph(gp_t& gp,

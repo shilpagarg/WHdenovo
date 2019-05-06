@@ -51,7 +51,7 @@ parser.add_argument('-p', '--ped', metavar='ped file', type=str,
 parser.add_argument('-o', '--output', metavar = 'PRED_HAPLOTIGS', 
                     required = False)
 parser.add_argument('-f', '--reference', metavar = 'CANU', required = False)
-parser.add_argument('-s', '--size', required = True, help = 'Genome size.')
+#parser.add_argument('-s', '--size', required = True, help = 'Genome size.')
 parser.add_argument('-k', type = int, default = 77 , help = 'something for Spades.')
 parser.add_argument('-t', type = int, default = 3, help = "Some steps utilize GNU parallel, this is for specitying the threads for them.")
 args = parser.parse_args()
