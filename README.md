@@ -1,6 +1,7 @@
 # WHdenovo
+A cost-effective approach to diploid assembly for single samples and trios. It includes the following steps: construct sequence graph from illumina, align long reads to the graph and partition these long reads to two haplotypes.
 
-For starting, you need to compile some dependencies.
+Installation instructions: For starting, you need to compile some dependencies.
 
 for SPAdes
 
@@ -9,7 +10,7 @@ cd trioasm/SPAdes-3.13.0
 ./spades_compile.sh
 ```
 
-for whatahap
+for whatshap
 ```
 cd trioasm/whatshap
 python setup.py build_ext -i
@@ -49,7 +50,7 @@ Trio case. Illumina file names and paths are provided when you simulate.
 python src/assemble.py --illumina1 <illumina_mom_1.fq> <illumina_dad_1.fq> <illumina_dad_1.fq> \
                        --illumina2  <illumina_mom_2.fq> <illumina_dad_2.fq> <illumina_dad_2.fq> \
                        --pacbio <pacbio_mom.fasta> <pacbio_dad.fasta> <pacbio_child.fasta>  -p ped \ 
-                       -t <thread> -s <genome size>
+                       -t <thread> 
 ```
 
 e.g.
@@ -58,16 +59,14 @@ e.g.
 python src/assemble.py --illumina1 16513_illumina_10k_1.5/mom.het1.5.cov30_1.fq 16513_illumina_10k_1.5/dad.het1.5.cov30_1.fq 16513_illumina_10k_1.5/child.het1.5.cov30_1.fq \
                        --illumina2 16513_illumina_10k_1.5/mom.het1.5.cov30_2.fq 16513_illumina_10k_1.5/dad.het1.5.cov30_2.fq 16513_illumina_10k_1.5/child.het1.5.cov30_2.fq \
                        --pacbio 16513_pacbio_10k_1.5_20/pacbio_mom.fasta 16513_pacbio_10k_1.5_20/pacbio_dad.fasta 16513_pacbio_10k_1.5_20/pacbio_child.fasta \
-                       -p ped -t 24 -s 10k
+                       -p ped -t 24
 ```
 
-For bubble chain part, change the inside assemble.py to use the old version (bubble_chain.py -> bubble_chain_4scripts_version.py)
-About spades, One version in SPAdes-3.13.0-old, lines that say "buldge" are commented. Another version in SPAdes-3.13.0, has been added one line says if (comment=="Buldge remover") return xxxx;.
 
 Individual case
 ```
 python src/assemble.py --illumina1 <illumina_who_1.fq> --illumina2 <illumina_who_2.fq> \ 
-                       --pacbio <pacbio_who.fasta> -t <thread> -s <genome size>
+                       --pacbio <pacbio_who.fasta> -t <thread>
 ```
 
 For validation
