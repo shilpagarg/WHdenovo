@@ -75,3 +75,5 @@ First you need to know which temp directory you just output
 python src/validate.py temp_pid_mmddhhmmss/bc1 <pacbio_who.fasta>
 
 ```
+
+We acknowledge the support of dependencies such as SPAdes, vg and Aligner.
