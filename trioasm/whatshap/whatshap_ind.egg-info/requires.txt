@@ -1,0 +1,4 @@
+pysam
+PyVCF
+pyfaidx
+xopen

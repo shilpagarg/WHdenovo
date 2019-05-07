@@ -1,0 +1,3 @@
+[console_scripts]
+whatshap_ind = whatshap.__main__:main
+
