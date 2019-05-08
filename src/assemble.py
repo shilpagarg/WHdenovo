@@ -36,14 +36,17 @@ PID = os.getpid()
 logging.info('PID %d'%PID)
 
 parser = argparse.ArgumentParser(description=eg, formatter_class=RawTextHelpFormatter)
+
+parser.add_argument('--pacbioccs', metavar='FASTQ/FASTA', type=str, nargs='+',
+                     help='PacBioCCS read data. If specified, we don\'t need \n \
+illumina data or pacbio data.')
+
 parser.add_argument('--illumina1', metavar='FASTQ/FASTA', type=str, nargs='+',
-                     required = True, 
                      help='Illumina read data for right reads.')
 parser.add_argument('--illumina2', metavar='FASTQ/FASTA', type=str, nargs='+',
-                     required = True, 
                      help='Illumina read data for left reads.')
 parser.add_argument('--pacbio', metavar='FASTQ/FASTA', type=str, nargs='+',
-                     required = True, help='PacBio read data. If no PED file \n\
+                     help='PacBio read data. If no PED file \n\
 specified, should only give one file. \nOtherwise, three \
 files in the order of \nMOM, DAD, CHILD.')
 parser.add_argument('-p', '--ped', metavar='ped file', type=str,
@@ -56,16 +59,42 @@ parser.add_argument('-k', type = int, default = 77 , help = 'something for Spade
 parser.add_argument('-t', type = int, default = 3, help = "Some steps utilize GNU parallel, this is for specitying the threads for them.")
 args = parser.parse_args()
 
+# First check for using pacbioccs or pacbio + illumina
+if args.pacbioccs != None:
+    if args.illumina1 != None or args.illumina2 != None or args.pacbio != None:
+        raise ValueError('When using pacbioccs data, we don\'t require '
+                         'illumina data or pacbio data.')
+    else:
+        mode = 'pacbioccs'
+else:
+    if args.illumina1 == None or args.illumina2 == None or args.pacbio == None:
+        raise ValueError('When not using pacbioccs data, both illumina '
+                         'data and pacbio data should be given.')
+    else:
+        mode = 'illmn+pb'
+
+# Then check whether working with trio or individual.
+
 if args.ped != None:
-    if len(args.pacbio) != 3:
-        raise ValueError('When PED specified, you should have three PACBIO '
-                         'files in the order of MOM, DAD, CHILD.')
+    if mode == 'pacbioccs':
+        if len(args.pacbioccs) != 3:
+            raise ValueError('When PED specified, you should have three PACBIOCCS '
+                             'files in the order of MOM, DAD, CHILD.')
+    elif mode == 'ilmn+pb':
+        if len(args.pacbio) != 3 or len(args.illumina1) != 3 or len(args.illumina2) != 3:
+            raise ValueError('When PED specified, you should have three for each PACBIO, '
+                             'ILLUMINA_1, and ILLUMINA_2 files in the order of MOM, DAD, CHILD.')
     if args.output != None or args.reference != None:
         raise ValueError('When PED is specified, you cannot have -o or -f.')
 elif args.ped == None:
-    if len(args.pacbio) != 1:
-        raise TypeError('When no PED specified, you should have only one '
-                        'PACBIO file.')
+    if mode == 'pacbioccs':
+        if len(args.pacbioccs) != 1:
+            raise ValueError('When no PED specified, you should have only one '
+                             'PACBIOCCS file.')
+    if mode == 'illmn+pb':
+        if len(args.pacbio) != 1 or len(args.illumina1) != 1 or len(args.illumina2) != 1:
+            raise ValueError('When no PED specified, you should have only one for each '
+                             'PACBIO, ILLUMINA_1, and ILLUMINA_2 file.')
     #if args.output == None or args.reference == None:
     #    raise ValueError('When we don\'t have PED, we should have both -o and -f')
 

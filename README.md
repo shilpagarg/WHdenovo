@@ -18,7 +18,7 @@ cd ../whatshap_trioasm
 python setup.py build_ext -i
 ```
 
-And for some python packags, you need to manully copy them into your local python environment.
+And for some python packages, you need to manully copy them into your local python environment.
 For example, if you are using Anaconda Python3.6:
 ```
 cd trioasm/dependence
@@ -27,9 +27,13 @@ cp -r google ~/anaconda3/lib/python3.6/site-packages/
 cp -r networkx ~/anaconda3/lib/python3.6/site-packages/
 cp -r stream ~/anaconda3/lib/python3.6/site-packages/
 cp -r vcf ~/anaconda3/lib/python3.6/site-packages/
-cp -r xopen-0.3.5.dist-info
+cp -r xopen-0.3.5.dist-info ~/anaconda3/lib/python3.6/site-packages/
 ``` 
-
+Other prerequisite: pbsim, parallel. 
+```
+conda install pbsim
+conda install parallel
+```
 
 For simulating data
 Illumina:
@@ -38,10 +42,13 @@ python src/simulate.py illumina N-bp.fasta <het> out/illumina/
 ```
 And it will show you the file you'll need
 ```
-python src/simulate.py pacbio sample.fastq <coverage> out/pacbio/ <mom_hap1.fasta> <mom_hap2.fasta> <dad_hap1.fasta> <dad_hap2.fasta> <child_hap1.fasta> <child_hap2.fasta>
+python src/simulate.py pacbio test/sample.fastq <coverage> out/pacbio/ <mom_hap1.fasta> <mom_hap2.fasta> <dad_hap1.fasta> <dad_hap2.fasta> <child_hap1.fasta> <child_hap2.fasta>
 ```
 You can directly take the illumina data the program told you to use when simulating illumina data.
-
+PacBioCCS:
+```
+python src/simulate.py pacbioccs N-bp.fasta <het> out/pacbioccs/
+```
 
 For running assembly
 Trio case. Illumina file names and paths are provided when you simulate.
@@ -51,6 +58,10 @@ python src/assemble.py --illumina1 <illumina_mom_1.fq> <illumina_dad_1.fq> <illu
                        --illumina2  <illumina_mom_2.fq> <illumina_dad_2.fq> <illumina_dad_2.fq> \
                        --pacbio <pacbio_mom.fasta> <pacbio_dad.fasta> <pacbio_child.fasta>  -p ped \ 
                        -t <thread> 
+```
+```
+python src/assemble.py --pacbioccs <pacbioccs_mom.fastq> <pacbioccs_dad.fastq> <pacbioccs_child.fastq> \
+                       --ped ped -t <thread>
 ```
 
 e.g.
@@ -62,12 +73,12 @@ python src/assemble.py --illumina1 16513_illumina_10k_1.5/mom.het1.5.cov30_1.fq 
                        -p ped -t 24
 ```
 
-
 Individual case
 ```
 python src/assemble.py --illumina1 <illumina_who_1.fq> --illumina2 <illumina_who_2.fq> \ 
                        --pacbio <pacbio_who.fasta> -t <thread>
 ```
+
 
 For validation
 First you need to know which temp directory you just output
