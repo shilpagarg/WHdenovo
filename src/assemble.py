@@ -137,12 +137,12 @@ logging.info('Bubble Chain...')
 # bubble chain
 # ========================================For 4scripts version, change the script name (bubble_chian.py) to bubble_chain_4scripts_version.py====================================
 if args.ped != None:
-    subprocess.call('python3 /home/ec2-user/WHdenovo/MHC/illumina_pair_end/spadesTrio/K51/bubble_chain_directed.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
+    subprocess.call('python3 src/bubble_chain_directed.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
     #subprocess.call('python3 src/bubble_chain_4scripts_version.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
     for i in range(3):
         subprocess.call("ls %s/bc1/*trans | sed 's/.trans//' | parallel -j %d 'python3 src/combine_canu_chunks_chunks.py {}_%d.gam {}_%d_g.gam'" % (tempPath, args.t, i, i), shell = True)
 else:
-    subprocess.call('python3 src/bubble_chain_4scripts_version.py %s/illumina/asm1.trans %s/aln.gam %s/bc1/aln'%(tempPath, tempPath, tempPath), shell = True)
+    subprocess.call('python3 src/bubble_chain_directed.py %s/illumina/asm1.trans %s/aln.gam %s/bc1/aln'%(tempPath, tempPath, tempPath), shell = True)
     subprocess.call("ls %s/bc1/*trans | sed 's/.trans//' | parallel -j %d 'python3 src/combine_canu_chunks_chunks.py {}.gam {}_g.gam'" % (tempPath, args.t), shell = True)
 
 
