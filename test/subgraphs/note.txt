@@ -1,0 +1,43 @@
+Graph building strictly follows the steps in src/assembly.py, inputing the corrected fastq of the trio, extracted from the alignment for chr22.
+
+GraphAligner -t 90 -g asm1_1.gfa -a aln0.gam -f ~/WHdenovo/MHC/pacbio/pacbio.dad.HG003Pac.22.fasta --seeds-mum-count 200 --seeds-mxm-length 20
+GraphAligner -t 90 -g asm1_1.gfa -a aln1.gam -f ~/WHdenovo/MHC/pacbio/pacbio.dad.HG003Pac.22.fasta --seeds-mum-count 200 --seeds-mxm-length 20
+GraphAligner -t 90 -g asm1_1.gfa -a aln2.gam -f ~/WHdenovo/MHC/pacbio/pacbio.son.HG002Pac.22.fasta --seeds-mum-count 200 --seeds-mxm-length 20
+
+Align the reference of chr22 to the graph, one for checking if the graph is write, one for extracting a continuous subgraph according to this alignment.
+
+GraphAligner -t 90 -g asm1_1.gfa -a chr22.gam -f ~/WHdenovo/MHC/ref/chr22.fasta --seeds-mum-count 50000 --seeds-mxm-length 15
+
+Subgraph extraction method:
+
+1. Pick a node in a certain bubble. e.g. 47664642
+
+vg view -Rj asm1.snarls | less 
+
+2. In the alignment, see if the reference pass this bubble. try 1. 2. until 'grep' returns only one line. e.g. 31888:47664642.
+
+vg view -a chr22.gam | jq '.path.mapping[].position.node_id' | grep -n 47664642
+
+3. Then grep some node around that node that happens in a bubble. The range can be adjusted in order to have more bubbles.
+
+vg view -a chr22.gam | jq '.path.mapping[].position.node_id' | sed -n '31880,31900p' | sort | uniq > sub1.nodelist
+
+4. Extranct the subgraph from the whole graph according to this node list
+
+python extractSubGFA.py sub1.nodelist asm1_1.gfa > sub1.gfa
+
+5. In Bandage, see if this sbugraph if clean and continuous, otherwise start from 1. again.
+
+6. If you are satisfied with the graph. Extract all the nodes in the graph ( there would be more than the previous nodelist ).
+
+grep '^S' sub1.gfa | cut -d$'\t' -f2 > sub1.fullnodes
+
+7. Extract alignments that covers these nodes. Needs some modification of file name in this shell script. And prepare the TRANS file
+
+./extract.sh
+vg -Fv sub1.gfa > sub1.gv
+vg snarls -t -r sub1.trans sub1.gv > sub1.snarls
+
+8. Test bubble chain code.
+
+python src/bubble_chaindirected.py sub1.trans 

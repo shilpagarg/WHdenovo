@@ -98,7 +98,7 @@ for i in args.illumina2:
 
 # spades  ADDED "-m 500" FOR LARGE GENOME
 logging.info('Running spades...')
-spades_cmd = "python2 trioasm/SPAdes-3.13.0/spades.py -t 16 -k %d -m 500 -1 %s/fq1.fq -2 %s/fq2.fq --only-assembler -o %s/illumina/" % (args.k, tempPath, tempPath, tempPath)
+spades_cmd = "python2 trioasm/SPAdes-3.13.0/spades.py -t %d -k %d -m 500 -1 %s/fq1.fq -2 %s/fq2.fq --only-assembler -o %s/illumina/" % (args.t, args.k, tempPath, tempPath, tempPath)
 spades_cmd = spades_cmd.split()
 a = subprocess.call(spades_cmd, shell=False)#, stdout=subprocess.PIPE)
 if a != 0:
@@ -121,12 +121,12 @@ logging.info('Aligning...')
 # alignment
 if args.ped != None:
     for i in range(3):
-        a = subprocess.call("%s -g %s/illumina/asm1.gfa -f %s -a %s/aln%d.gam --seeds-mum-count 200 --seeds-mxm-length 20" % (graphaligner, tempPath, args.pacbio[i], tempPath, i), shell = True, stdout=subprocess.PIPE)
+        a = subprocess.call("%s -t %d -g %s/illumina/asm1.gfa -f %s -a %s/aln%d.gam --seeds-mum-count 200 --seeds-mxm-length 20" % (graphaligner, args.t, tempPath, args.pacbio[i], tempPath, i), shell = True, stdout=subprocess.PIPE)
         if a != 0:
             logging.error('Error while running GraphAligner. Exit Code:%d'%a)
             sys.exit(2)
 elif args.ped == None:
-    a = subprocess.call("%s -g %s/illumina/asm1.gfa -f %s -a %s/aln.gam --seeds-mum-count 200 --seeds-mxm-length 20" % (graphaligner, tempPath, args.pacbio[0], tempPath), shell = True, stdout=subprocess.PIPE)
+    a = subprocess.call("%s -t %d -g %s/illumina/asm1.gfa -f %s -a %s/aln.gam --seeds-mum-count 200 --seeds-mxm-length 20" % (graphaligner, args.t, tempPath, args.pacbio[0], tempPath), shell = True, stdout=subprocess.PIPE)
     if a != 0:
         logging.error('Error while running GraphAligner. Exit Code: %d'%a)
         sys.exit(2) 
@@ -137,7 +137,8 @@ logging.info('Bubble Chain...')
 # bubble chain
 # ========================================For 4scripts version, change the script name (bubble_chian.py) to bubble_chain_4scripts_version.py====================================
 if args.ped != None:
-    subprocess.call('python3 src/bubble_chain_4scripts_version.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
+    subprocess.call('python3 /home/ec2-user/WHdenovo/MHC/illumina_pair_end/spadesTrio/K51/bubble_chain_directed.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
+    #subprocess.call('python3 src/bubble_chain_4scripts_version.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
     for i in range(3):
         subprocess.call("ls %s/bc1/*trans | sed 's/.trans//' | parallel -j %d 'python3 src/combine_canu_chunks_chunks.py {}_%d.gam {}_%d_g.gam'" % (tempPath, args.t, i, i), shell = True)
 else:
