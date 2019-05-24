@@ -28,6 +28,18 @@ pacbio.add_argument('dir', type = str,
 pacbio.add_argument('fasta', type = str, nargs = 6,
 					help = 'Original FASTA sequence files. Please input them in the order of: MOM1 MOM2 DAD1 DAD2 CHILD1 CHILD2')
 
+pacbioccs = sub.add_parser('pacbioccs', help = 'Take simulated ')
+pacbioccs.add_argument('fasta', type=str,
+                     help='Original FASTA haplotype sequence file.')
+pacbioccs.add_argument('het', type = str, help = "A NUMBER for heterozygosity level")
+#pacbioccs.add_argument('coverage', type = int,
+#                                        help = 'A NUMBER for the coverage in the pacbio read output. ')
+pacbioccs.add_argument('dir', type = str,
+                                        help = 'Output directory name.')
+#pacbioccs.add_argument('fasta', type = str, nargs = 6,
+#                                        help = 'Original FASTA sequence files. Please input them in the order of: MOM1 MOM2 DAD1 DAD2 CHILD1 CHILD2')
+
+
 args = parser.parse_args()
 
 pid = os.getpid()
@@ -86,3 +98,40 @@ elif args.subparser == 'pacbio':
 		subprocess.call('cat %s/pacbio_%s1.fastq %s/pacbio_%s2.fastq | seqtk seq -A - > %s/pacbio_%s.fasta'%(outputDir, i, outputDir, i, outputDir, i), shell = True)
 		print('%s/pacbio_%s.fasta'%(outputDir, i))
 	print('Above are all you need.')
+
+elif args.subparser == 'pacbioccs':
+        mom1FA = args.fasta
+        fq = 'test/pacbioccs.sample.fastq'
+        het = args.het
+        pbccsOutput = str(pid) + '_' + args.dir
+        if not os.path.exists(mom1FA):
+                raise FileNotFoundError(mom1FA + ' not found.')
+                sys.exit(1)
+        # Generate haplotypes.
+        simulate_mut = 'src/simulate_mutation.py'
+        subprocess.run('mkdir %s'%pbccsOutput, shell = True  )
+        subprocess.call('python3 %s %s %s %s/mom2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
+        subprocess.call('python3 %s %s %s %s/dad1'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
+        subprocess.call('python3 %s %s %s %s/dad2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
+        subprocess.call('cp %s/mom2.fasta %s/child1.fasta'%(pbccsOutput, pbccsOutput), shell = True)
+        subprocess.call('cp %s/dad1.fasta %s/child2.fasta'%(pbccsOutput, pbccsOutput), shell = True)
+        subprocess.call('cp %s %s/mom1.fasta'%(mom1FA, pbccsOutput), shell = True)
+        FAs = ['mom1.fasta',  'mom2.fasta', 'dad1.fasta', 'dad2.fasta', 'child1.fasta', 'child2.fasta']
+
+        '''
+        pbsim --seed 10 --prefix mom1 --depth 20 --length-min 12000 --length-max 13000 --accuracy-min 0.99 --sample-fastq ../test/analysis-PGP1_1
+6.5_Elf4-5pM-42165-m54336_190222_142322.Q20.fastq  --accuracy-max 1 mom1.het1.cov30.fasta > pbsim.log 2>&1
+        '''
+        for i in range(6):
+                a = subprocess.call('pbsim --seed %d --prefix %s/%s --depth 10 --sample-fastq %s %s/%s > %s/pbsim.log 2>&1'%(i, pbccsOutput, family[i], fq, pbccsOutput, FAs[i], pbccsOutput), shell = True
+)
+                subprocess.call("awk 'NR%%4==1 {printf(\"%%s_%s\\n\",$0)} NR%%4!=1 {print}\\' %s/%s_0001.fastq > %s/pacbioccs_%s.fastq" % (family[i], pbccsOutput, family[i], pbccsOutput, family[i]
+), shell = True)
+                #print('%s/pacbioccs_%s.fastq'%(outputDir, family[i]))
+                if a != 0:
+                        print('Check if you have installed package package "pbsim". Then check if anything wrong with your input file.')
+                        sys.exit(2)
+        for i in ['mom', 'dad', 'child']:
+                subprocess.call('cat %s/pacbioccs_%s1.fastq %s/pacbioccs_%s2.fastq | seqtk seq -A - > %s/pacbioccs_%s.fasta'%(pbccsOutput, i, pbccsOutput, i, pbccsOutput, i), shell = True)
+                print('%s/pacbioccs_%s.fasta'%(pbccsOutput, i))
+        print('Above are all you need.')
