@@ -304,7 +304,6 @@ def vg_reader(locus_file, gam_file, sample):
             current_endsnarl_orientation = l.snarl.end.backward
             path_in_bubble =[]
             hasInBubble = False
-            print(l)
             if len(l.visits) ==0:
                 #TODO: for now, assumed, all nodes in path are either forward or backward
                 if l.snarl.start.backward == True:
@@ -392,7 +391,6 @@ def vg_reader(locus_file, gam_file, sample):
     
     if len(locus_branch_mapping.keys()) < 1:
         print('No bubble for this bubble chain contig.')
-
     alleles_per_pos = defaultdict()
     for k,v in locus_branch_mapping.items():
         alleles_per_pos[k] = len(v)
@@ -403,7 +401,6 @@ def vg_reader(locus_file, gam_file, sample):
                 if len(path) > 0:
                     for edge in path:
                         reverse_mapping[edge].append([k, i, len(path), len(bubble)]) # in complex bubbles, a node can map to multiple branches.
-
     readset = ReadSet()
     count = 0
     duplicated = 0
@@ -411,6 +408,7 @@ def vg_reader(locus_file, gam_file, sample):
     #TODO: consider reads with only positive score.
     c = 0
     inputread = 0
+    
     with stream.open(str(gam_file), "rb") as istream:
         for data in istream:
             inputread += 1
@@ -431,45 +429,51 @@ def vg_reader(locus_file, gam_file, sample):
             prev_tmp = []
             prev_locus = -1
             n_variant = 0
+            read_nodes = []
+            added = False
             for i in range(0,len(g.path.mapping)-1):
             #for i in g.path.mapping: # go over the mapping in a read
                 # TODO: check for forward or reverse strand, we may not need it for DAG.
                 
                 edge1 = tuple((int(g.path.mapping[i].position.node_id), int(g.path.mapping[i+1].position.node_id))) # go over nodes in a mapping
                 edge2 = tuple((int(g.path.mapping[i+1].position.node_id), int(g.path.mapping[i].position.node_id))) # go over nodes in a mapping
-                
+                read_nodes.append(edge1)
                 if edge1 in reverse_mapping or edge2 in reverse_mapping: # handle start and sink node.
+                    #print('AT LEAST IN REVERSE_MAPPING')
                     if edge1 in reverse_mapping:
                         
                         #qualities = [10]* reverse_mapping[edge1][0][2]
                         qualitie = 1 
                         node_inf = [tuple(i[0:3]) for i in reverse_mapping[edge1]] # consider (locus, branch)
+                        #print('edge,nodeinfo',edge1, node_inf)
                     else:
                         # qualities = [10]* reverse_mapping[edge2][0][2]
                         qualities = 1 
                         node_inf = [tuple(i[0:3]) for i in reverse_mapping[edge2]]
                     tmp = node_inf.copy()
                     if prev_locus != tmp[0][0]:
+                        added = False
                         prev_tmp = tmp.copy()
                         prev_locus = tmp[0][0]
                         len_in_path = 1
                     else:
                         len_in_path += 1
-                        
+                    if added:
+                        continue
                     interset_tmp = list(set(tmp).intersection(set(prev_tmp)))
-                    if len(interset_tmp) == 1 and interset_tmp[0][2] == len_in_path: # for complicated bubbles, but with Top-k paths. combination of some nodes uniquely determine branch.
+                    if len(interset_tmp) == 1:# and interset_tmp[0][2] == len_in_path: # for complicated bubbles, but with Top-k paths. combination of some nodes uniquely determine branch.
                         qualities= 1 
                         read.add_variant(interset_tmp[0][0], interset_tmp[0][1], qualities)
                         n_variant += 1
-
-            if n_variant > 2:  #???
+                        added = True
+            if n_variant > 2:
                 readset.add(read)
-
+                print(read, n_variant)
     
     readset1 = ReadSet()
     tmp_duplicated = set()
     for read in readset:
-        if read.sort() == 1: # What is this doing???
+        if read.sort() == 1: 
             duplicated = duplicated +1
             tmp=[]
             for variant in read:
@@ -547,7 +551,6 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
     max_coverage = 5
     all_heterozygous = False
     distrust_genotypes = True
-
     readsets = dict()
     total_readsets = dict()
     for sample in [0, 1, 2]:
@@ -557,7 +560,6 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
         selected_indices = readselection(readset, max_coverage)
         selected_reads = readset.subset(selected_indices)
         readsets[sample] = selected_reads
-
     # Merge reads into one ReadSet (note that each Read object
     # knows the sample it originated from).
     all_reads = ReadSet()
@@ -570,7 +572,7 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
     total_reads = ReadSet()
     for sample, readset in total_readsets.items():
          for read in readset:
-             assert read.is_sorted(), "Add a read.sort() here"
+             #assert read.is_sorted(), "Add a read.sort() here"
              total_reads.add(read)
 
     
@@ -578,7 +580,6 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
 
     recombcost = [100] * len(accessible_positions) 
     pedigree = Pedigree(NumericSampleIds())
-
     genotype_likelihoods = [None if all_heterozygous else PhredGenotypeLikelihoods(0,0,0)] * len(accessible_positions)
     pedigree.add_individual('mother', [1] * len(accessible_positions), genotype_likelihoods) # all genotypes heterozygous
     pedigree.add_individual('father', [1] * len(accessible_positions), genotype_likelihoods) # all genotypes heterozygous
@@ -609,7 +610,7 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
     overall_components = find_components(accessible_positions, all_reads, master_block, heterozygous_positions_by_sample)
     n_phased_blocks = len(set(overall_components.values()))
     components = defaultdict()
-    print('homozygous in an sample master block', locus_file, master_block)
+    #print('homozygous in an sample master block', locus_file, master_block)
     # Superreads in superreads_list are in the same order as individuals were added to the pedigree
     f = open(str(locus_file)+".allreads", 'w')
     for sample, sample_superreads in zip([0,1,2], superreads_list):

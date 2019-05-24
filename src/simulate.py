@@ -76,7 +76,7 @@ elif args.subparser == 'pacbio':
 	outputDir = illumina_pid + '_' + args.dir
 	subprocess.run('mkdir ' + outputDir, shell = True)
 	for i in range(6):
-		a = subprocess.call('pbsim --seed 10 --prefix %s/%s --depth %d --sample-fastq %s %s > %s/pbsim.log 2>&1'%(outputDir, family[i], halfCov, fq, FAs[i], outputDir), shell = True)
+		a = subprocess.call('pbsim --seed %d --prefix %s/%s --depth %d --sample-fastq %s %s > %s/pbsim.log 2>&1'%(i+1, outputDir, family[i], halfCov, fq, FAs[i], outputDir), shell = True)
 		subprocess.call("awk 'NR%%4==1 {printf(\"%%s_%s\\n\",$0)} NR%%4!=1 {print}\\' %s/%s_0001.fastq > %s/pacbio_%s.fastq" % (family[i], outputDir, family[i], outputDir, family[i]), shell = True)
 		print('%s/pacbio_%s.fastq'%(outputDir, family[i]))
 		if a != 0:
