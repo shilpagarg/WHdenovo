@@ -64,7 +64,7 @@ def readPred(partitioned, readIsec):
 			pred_hap2[tokens[1]].append(tokens[0])
 		considered_total += 1
 	'''
-	return pred_hap1, pred_hap2, considered_total
+	return pred_hap1, pred_hap2, considered_total, read_block_hp_nvar
 
 def readTrue(tagged, readIsec):
 	trueHap1 = []#defaultdict(list)
@@ -86,7 +86,7 @@ def readTrue(tagged, readIsec):
 	return trueHap1, trueHap2 # For totally how many reads we have
 
 
-def compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2):
+def compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2, read_block_hp_nvar):
 	predBlocks = list(pred_hap1.keys())
 	#trueBlocks = list(trueHap1.keys())
 	successCount = 0
@@ -119,11 +119,17 @@ def compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2):
 	print('successCount/consideredPartitioned:', partitioned_accuracy)
 	oc = open('correct.reads', 'w')
 	for i in correct_reads:
-		oc.write(i + '\n')
+		bhn = read_block_hp_nvar[i]
+		bhn = sorted(bhn, key = lambda t:t[2])[-1]
+		hp = bhn[1]
+		oc.write(i + '\t' + hp + '\n')
 	oc.close()
 	ow = open('wrong.reads', 'w')
 	for i in wrong_reads:
-		ow.write(i + '\n')
+		bhn = read_block_hp_nvar[i]
+		bhn = sorted(bhn, key = lambda t:t[2])[-1]
+		hp = bhn[1]
+		ow.write(i + '\t' + hp + '\n')
 	ow.close()
 	#print('successCount/allTagged:', success_rate)
 
@@ -134,7 +140,7 @@ tagTXT = sys.argv[2]
 partitioned, tagged, readIsec = readBothFile(allreads, tagTXT)
 partitioned = partition_selection(partitioned, readIsec)
 print(len(partitioned), len(tagged), len(readIsec))
-pred_hap1, pred_hap2, considered_total = readPred(partitioned, readIsec)
+pred_hap1, pred_hap2, considered_total, read_block_hp_nvar = readPred(partitioned, readIsec)
 trueHap1, trueHap2 = readTrue(tagged, readIsec)
-compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2)
+compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2, read_block_hp_nvar)
 

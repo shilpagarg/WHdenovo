@@ -20,7 +20,6 @@ import random
 import collections
 from collections import OrderedDict, namedtuple
 
-
 from contextlib import ExitStack
 from .vcf import VcfReader, PhasedVcfWriter
 from . import __version__
@@ -31,6 +30,12 @@ from .pedigree import (PedReader, mendelian_conflict, recombination_cost_map,
 from .variants import ReadSetReader, ReadSetError
 from heapq import heappush, heappop
 from itertools import count
+for p in sys.path:
+    if 'trioasm' in p:
+        src = p.split('WHdenovo')[0] + 'WHdenovo/src'
+sys.path.append(src)
+from bubble_chain import bc
+from multiprocessing import Pool
 
 
 __author__ = "Shilpa Garg"
@@ -242,273 +247,6 @@ It creates an association between het variants and read alignments.
 
 Output: The optimal partitioning is written to standard output.
 """
-def mergePath(tempPath, path_in_bubble, insideBack, pathBack, local_path_back):
-    out = []
-    if not insideBack:
-        insideBack = -1
-    else:
-        insideBack = 1
-    if not pathBack:
-        pathBack = -1
-    else:
-        pathBack = 1
-    if insideBack * pathBack * local_path_back == -1:
-        newpath = []
-        path_in_bubble.reverse()
-        for n in path_in_bubble:
-            newpath.append((n[1], n[0]))
-        path_in_bubble = newpath.copy()
-    for i in range(len(tempPath)):
-        if 0 not in tempPath[i]:
-            out.append(tempPath[i])
-        else:
-            break
-    if pathBack == -1:
-        out.append((tempPath[i][0], path_in_bubble[0][0]))
-    for j in path_in_bubble:
-        out.append(j)
-    if pathBack == 1:
-        out.append((j[1], tempPath[i+1][1]))
-    for k in range(i + 2, len(tempPath)):
-        out.append(tempPath[k])
-    return out
-
-def vg_reader(locus_file, gam_file, sample):
-    """
-    input: sorted locus and sorted GAM file output from vg.
-    output: sorted readset for core DP.
-    assumptions: 
-    1. locus file consists of linear ordering of simple bubbles only and hence sorted. Each locus file does not contain start and end vertex.
-    2. paths in the locus should be covered by atleast one pacbio read.
-    2. GAM file is sorted and restricted to locus file.
-    3. files consists of all DAG connected components.
-    4. add variant only when it identifies the branch uniquely.
-    """
-    locus_count = 0
-    prev_startsnarl = 0
-    prev_endsnarl = 0
-    locus_branch_mapping=OrderedDict()
-    prev_startsnarl_orientation = -1
-    prev_endsnarl_orientation = -1
-    insidebubble = 0
-    
-    with stream.open(str(locus_file), "rb") as istream:
-        for data in istream:
-            l = vg_pb2.SnarlTraversal()
-            l.ParseFromString(data)
-            #TODO: make ordered doctionary locus_branch_mapping
-            # handle forward and backward case of nodes
-            current_startsnarl = l.snarl.start.node_id
-            current_startsnarl_orientation = l.snarl.start.backward
-            current_endsnarl = l.snarl.end.node_id
-            current_endsnarl_orientation = l.snarl.end.backward
-            path_in_bubble =[]
-            hasInBubble = False
-            if len(l.visits) ==0:
-                #TODO: for now, assumed, all nodes in path are either forward or backward
-                if l.snarl.start.backward == True:
-                    path_in_bubble.append(tuple ((l.snarl.end.node_id,l.snarl.start.node_id)))
-                else:
-                    path_in_bubble.append(tuple ((l.snarl.start.node_id,l.snarl.end.node_id)))
-            else:
-                #TODO: for now, assumed, all nodes in path are either forward or backward
-                if (l.snarl.start.backward == True and l.snarl.end.backward != True) or (l.snarl.start.backward != True and l.snarl.end.backward == True):
-                    path_in_bubble.append(tuple ((l.snarl.end.node_id, l.visits[-1].node_id)))
-                    local_path_back = -1
-                    for i in range(len(l.visits)):
-                        if l.visits[i].snarl.start.node_id != 0:
-                            pathBack = True
-                            if l.visits[i].backward:
-                                insideBack = True
-                            else:
-                                insideBack = False
-                            insidebubble = 1
-                            hasInBubble = True
-                        if i == len(l.visits) - 1:
-                            break
-                        path_in_bubble.append(tuple((l.visits[-1 - i].node_id, l.visits[-2 - i].node_id)))
-                    path_in_bubble.append(tuple ((l.visits[0].node_id,l.snarl.start.node_id)))
-                else:
-                    local_path_back = 1
-                    path_in_bubble.append(tuple ((l.snarl.start.node_id,l.visits[0].node_id)))
-                    for i in range(len(l.visits)):
-                        if l.visits[i].snarl.start.node_id != 0:
-                            pathBack = False
-                            if l.visits[i].backward:
-                                insideBack = True
-                            else:
-                                insideBack = False
-                            insidebubble = 1
-                            hasInBubble = True
-                        if i == len(l.visits) - 1:
-                            break
-                        path_in_bubble.append(tuple((l.visits[i].node_id, l.visits[i + 1].node_id)))
-                    path_in_bubble.append(tuple ((l.visits[-1].node_id, l.snarl.end.node_id)))
-
-            if hasInBubble:
-                tempPath = path_in_bubble.copy()
-
-                if current_startsnarl == prev_startsnarl and current_endsnarl == prev_endsnarl and current_endsnarl_orientation == prev_endsnarl_orientation and prev_startsnarl_orientation == current_startsnarl_orientation:
-                    pass
-                else:
-                    try:
-                        locus_branch_mapping[locus_count] = per_locus
-                    except NameError:
-                        pass
-                    locus_count += 1
-                    per_locus = []
-                    trans_raw = []
-                    trans_raw.append(l)
-            else:
-                if current_startsnarl == prev_startsnarl and current_endsnarl == prev_endsnarl and current_endsnarl_orientation == prev_endsnarl_orientation and prev_startsnarl_orientation == current_startsnarl_orientation:
-                    if insidebubble == 2:
-                        path_in_bubble = mergePath(tempPath, path_in_bubble, insideBack, pathBack, local_path_back)
-                        per_locus.append(path_in_bubble)
-                        insidebubble = 0
-                        insideBack = False
-                        pathBack = False
-                    else:
-                        per_locus.append(path_in_bubble)
-                else:
-
-                    if insidebubble == 1:
-                        insidebubble = 2
-                        path_in_bubble = mergePath(tempPath, path_in_bubble, insideBack, pathBack, local_path_back)
-                        per_locus.append(path_in_bubble)
-                    else:
-                        try:
-                            locus_branch_mapping[locus_count] = per_locus
-                        except NameError:
-                            pass
-                        locus_count += 1
-                        per_locus = []
-                        per_locus.append(path_in_bubble)
-
-            prev_startsnarl = current_startsnarl
-            prev_startsnarl_orientation = current_startsnarl_orientation
-            prev_endsnarl = current_endsnarl
-            prev_endsnarl_orientation = current_endsnarl_orientation
-    
-    if len(locus_branch_mapping.keys()) < 1:
-        print('No bubble for this bubble chain contig.')
-    alleles_per_pos = defaultdict()
-    for k,v in locus_branch_mapping.items():
-        alleles_per_pos[k] = len(v)
-    reverse_mapping = defaultdict(list)
-    for k, bubble in locus_branch_mapping.items():
-        if len(bubble) > 1: # more than one branch
-            for i, path in enumerate(bubble):
-                if len(path) > 0:
-                    for edge in path:
-                        reverse_mapping[edge].append([k, i, len(path), len(bubble)]) # in complex bubbles, a node can map to multiple branches.
-    readset = ReadSet()
-    count = 0
-    duplicated = 0
-    dup_read = 0
-    #TODO: consider reads with only positive score.
-    c = 0
-    inputread = 0
-    
-    with stream.open(str(gam_file), "rb") as istream:
-        for data in istream:
-            inputread += 1
-            g = vg_pb2.Alignment()
-            g.ParseFromString(data) 
-            # hard-coded source id, mapping quality and other values.
-            val1 = True
-            val2 = False
-
-            count1 =0
-            count2=0
-            #score = g.score/len(g.sequence)
-
-            #if score > 0.2:
-            #   continue
-            read = Read(g.name, 0, 0, sample) # create read for each read alignment
-            c += 1
-            prev_tmp = []
-            prev_locus = -1
-            n_variant = 0
-            read_nodes = []
-            added = False
-            for i in range(0,len(g.path.mapping)-1):
-            #for i in g.path.mapping: # go over the mapping in a read
-                # TODO: check for forward or reverse strand, we may not need it for DAG.
-                
-                edge1 = tuple((int(g.path.mapping[i].position.node_id), int(g.path.mapping[i+1].position.node_id))) # go over nodes in a mapping
-                edge2 = tuple((int(g.path.mapping[i+1].position.node_id), int(g.path.mapping[i].position.node_id))) # go over nodes in a mapping
-                read_nodes.append(edge1)
-                if edge1 in reverse_mapping or edge2 in reverse_mapping: # handle start and sink node.
-                    #print('AT LEAST IN REVERSE_MAPPING')
-                    if edge1 in reverse_mapping:
-                        
-                        #qualities = [10]* reverse_mapping[edge1][0][2]
-                        qualitie = 1 
-                        node_inf = [tuple(i[0:3]) for i in reverse_mapping[edge1]] # consider (locus, branch)
-                        #print('edge,nodeinfo',edge1, node_inf)
-                    else:
-                        # qualities = [10]* reverse_mapping[edge2][0][2]
-                        qualities = 1 
-                        node_inf = [tuple(i[0:3]) for i in reverse_mapping[edge2]]
-                    tmp = node_inf.copy()
-                    if prev_locus != tmp[0][0]:
-                        added = False
-                        prev_tmp = tmp.copy()
-                        prev_locus = tmp[0][0]
-                        len_in_path = 1
-                    else:
-                        len_in_path += 1
-                    if added:
-                        continue
-                    interset_tmp = list(set(tmp).intersection(set(prev_tmp)))
-                    if len(interset_tmp) == 1:# and interset_tmp[0][2] == len_in_path: # for complicated bubbles, but with Top-k paths. combination of some nodes uniquely determine branch.
-                        qualities= 1 
-                        read.add_variant(interset_tmp[0][0], interset_tmp[0][1], qualities)
-                        n_variant += 1
-                        added = True
-            if n_variant > 2:
-                readset.add(read)
-                print(read, n_variant)
-    
-    readset1 = ReadSet()
-    tmp_duplicated = set()
-    for read in readset:
-        if read.sort() == 1: 
-            duplicated = duplicated +1
-            tmp=[]
-            for variant in read:
-                tmp.append(variant.position)
-            x = [item for item, count in collections.Counter(tmp).items() if count > 1]
-            for a in x:
-                tmp_duplicated.add(a)
-            continue
-        else:
-            tmp = []
-            for variant in read:
-                tmp.append(variant.position)
-
-            # filtering out bubbles that are visited multiple times. 
-            if len(set(tmp)) < len(tmp):
-                continue
-
-            if len(read) >= 2:
-                tmp =[]
-                for variant in read:
-                   tmp.append(variant.position)
-                flag=0
-                for i, x in enumerate(tmp):
-                    if i > 0:
-                        if int(x - tmp[i - 1]) > 20:
-                            flag = 1
-
-                            break
-                if flag == 0:    
-                    readset1.add(read)
-
-
-    readset1.sort()
-    
-    return readset1, alleles_per_pos, locus_branch_mapping, readset
 
 def write_read_list(readset, bipartition, sample_components, numeric_sample_ids, output_file):
     """
@@ -545,7 +283,58 @@ def reverse_complement(seq):
 # phase_input_files is a list of paths to gams files for m, f and c.
 
 # def run_phaseg(locus_file, phase_input_files, use_ped_samples=False, read_list_filename=None):
-def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_files):
+
+def process_readset(Rawreadset, sample):
+
+    readset = ReadSet()
+    for r in Rawreadset:
+        read = Read(r[0], 0, 0, sample)
+        for v in r[1:]:
+            read.add_variant(v[0], v[1], 1)
+        readset.add(read)
+
+    readset1 = ReadSet()
+    tmp_duplicated = set()
+    for read in readset:
+        if len(read) == 1:
+            continue
+        if read.sort() == 1: 
+            duplicated = duplicated +1
+            tmp=[]
+            for variant in read:
+                tmp.append(variant.position)
+            x = [item for item, count in collections.Counter(tmp).items() if count > 1]
+            for a in x:
+                tmp_duplicated.add(a)
+            continue
+        else:
+            tmp = []
+            for variant in read:
+                tmp.append(variant.position)
+
+            # filtering out bubbles that are visited multiple times. 
+            if len(set(tmp)) < len(tmp):
+                continue
+
+            if len(read) >= 2:
+                tmp =[]
+                for variant in read:
+                   tmp.append(variant.position)
+                flag=0
+                for i, x in enumerate(tmp):
+                    if i > 0:
+                        if int(x - tmp[i - 1]) > 20:
+                            flag = 1
+
+                            break
+                if flag == 0:    
+                    readset1.add(read)
+
+    readset1.sort()
+
+    return readset1, readset
+
+def run_phaseg(read_list_filename, prefix, locus_file, use_ped_samples, block_readsets):
     recombrate = 1.26
     #needs to be 5 for trio, around 15 for individual
     max_coverage = 5
@@ -553,6 +342,13 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
     distrust_genotypes = True
     readsets = dict()
     total_readsets = dict()
+    for sample in range(3):
+        readset, readset_all = process_readset(block_readsets[sample], sample)
+        total_readsets[sample] = readset_all
+        selected_indices = readselection(readset, max_coverage)
+        selected_reads = readset.subset(selected_indices)
+        readsets[sample] = selected_reads
+    '''
     for sample in [0, 1, 2]:
         # with timers('read_bam'):
         readset, alleles_per_pos, locus_branch_mapping, readset_all = vg_reader(locus_file, phase_input_files[sample], sample)
@@ -560,6 +356,7 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
         selected_indices = readselection(readset, max_coverage)
         selected_reads = readset.subset(selected_indices)
         readsets[sample] = selected_reads
+    '''
     # Merge reads into one ReadSet (note that each Read object
     # knows the sample it originated from).
     all_reads = ReadSet()
@@ -573,8 +370,8 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
     for sample, readset in total_readsets.items():
          for read in readset:
              #assert read.is_sorted(), "Add a read.sort() here"
+             read.sort()
              total_reads.add(read)
-
     
     all_heterozygous = False
 
@@ -587,6 +384,7 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
     pedigree.add_relationship('mother', 'father', 'child') 
     dp_table = PedigreeDPTable(all_reads, recombcost, pedigree, distrust_genotypes = not all_heterozygous)
     superreads_list, transmission_vector = dp_table.get_super_reads()
+    print('superreads_list', superreads_list[2])
     master_block= None
     if distrust_genotypes:
         hom_in_any_sample = set()
@@ -612,10 +410,10 @@ def run_phaseg(read_list_filename,  use_ped_samples, locus_file, phase_input_fil
     components = defaultdict()
     #print('homozygous in an sample master block', locus_file, master_block)
     # Superreads in superreads_list are in the same order as individuals were added to the pedigree
-    f = open(str(locus_file)+".allreads", 'w')
+    f = open("%s_block_%d.allreads"%(prefix, read_list_filename), 'w')
     for sample, sample_superreads in zip([0,1,2], superreads_list):
         components[sample] = overall_components
-        haplotag(sample_superreads, total_readsets[sample], components[sample], accessible_positions, locus_file, 1, f)
+        haplotag(sample_superreads, total_readsets[sample], components[sample], accessible_positions, read_list_filename, 1, f)
 
     
     if read_list_filename:
@@ -630,6 +428,26 @@ def add_arguments(parser):
    arg('phase_input_files', nargs = 3, metavar = 'PHASEINPUT',
        help='BAM, CRAM or VCF file(s) with phase information, either through '
            'sequencing reads (BAM/CRAM) or through phased blocks (VCF)')
+   arg('-p', '--prefix', metavar = 'STR', required = False, help = 'Output partitioning results for each block into files with this prefix.')
+   arg('-t', '--threads', metavar = 'INT', type = int, required = False, default = 4, help = 'Number of threads to use. [4]')
 
 def main(args):
-    run_phaseg(**vars(args))
+    total_readsets = bc(args.locus_file, args.phase_input_files, args.threads)
+    #for bi in range(len(total_readsets)):
+    #    print(bi, 'block')
+    #    for ind in range(len(total_readsets[bi])):
+    #        print(ind, 'individual')
+    #        for r in total_readsets[bi][ind]:
+    #            print(r)
+    p = Pool(args.threads)
+    for block_id in range(len(total_readsets)):
+        #trio_readsets = []
+        #trio_readsetsAll = []
+        #for sample in range(3):
+        #    readset, readsetAll = process_readset(total_readsets[block_id][sample], sample)
+        #    trio_readsets.append(readset)
+        #    trio_readsetsAll.append(readsetAll)
+        result = p.apply_async(func=run_phaseg, args=(block_id, args.prefix, args.locus_file, args.use_ped_samples, total_readsets[block_id]))
+    p.close()
+    p.join()
+    #result.get()
