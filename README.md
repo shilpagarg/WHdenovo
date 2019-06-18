@@ -68,10 +68,15 @@ For assembling the genome from partitioned reads:
 ```
 python set_dip_asm.py -f son.inputreads.fa -0 path/to/output/HP0.reads -1 path/to/output/HP1.reads --assemble -s 15k -t 40
 ```
+Flye is the preset assembler in our pipeline. If you wish to use other assemblers with partitioned reads, just remove the ```--assemble``` argument.
 
 For validating the partitioning of simulated the data.
 ```
 python src/validate.py temp_pid_mmddhhmmss/bc1 <pacbio_who.fasta>
+```
+For validating the partitioning of real data when you have ground truth classification:
+```
+commands
 ```
 
 We acknowledge the support of dependencies such as SPAdes, vg and GraphAligner.
