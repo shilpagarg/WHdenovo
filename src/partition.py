@@ -25,7 +25,6 @@ Prerequisites:
 python2, python3, vg, GraphAligner, bfc, parallel.
 
 '''
-# prerequisite: stream, google, networkx, decorator, pysam
 logging.basicConfig(level=logging.DEBUG)
 logging.info('Using python version %s'%sys.version)
 if sys.version_info.major != 3:
@@ -49,8 +48,6 @@ parser.add_argument('-p', '--ped', metavar='ped file', type=str,
                      required = False, help = "PED file.")
 parser.add_argument('-o', '--output', metavar = 'PATH', 
                     required = False)
-#parser.add_argument('-f', '--reference', metavar = 'CANU', required = False)
-#parser.add_argument('-s', '--size', required = True, help = 'Genome size.')
 parser.add_argument('-k', type = int, default = 77 , help = 'K-mer size setting for SPAdes, \n\
 must be odd and no larger than 128. [77].')
 parser.add_argument('-s', '--size', type = str, required = True, help = 'Expected genome size, \
@@ -63,21 +60,14 @@ if args.ped != None:
     if len(args.pacbio) != 3:
         raise ValueError('When PED specified, you should have three PACBIO '
                          'files in the order of MOM, DAD, CHILD.')
-    #if args.output != None or args.reference != None:
-    #    raise ValueError('When PED is specified, you cannot have -o or -f.')
 elif args.ped == None:
     if len(args.pacbio) != 1:
-        raise TypeError('When no PED specified, you should have only one '
+        raise ValueError('When no PED specified, you should have only one '
                         'PACBIO file.')
-    #if args.output == None or args.reference == None:
-    #    raise ValueError('When we don\'t have PED, we should have both -o and -f')
-
-# TODO check if file amount match between illumina1 illumina2 pacbio. 
 
 whdenovoPath = '/'.join(sys.path[0].split('/')[:-1])
 vg = "%s/trioasm/vg"%whdenovoPath
 graphaligner = "GraphAligner"
-# spades commands
 if args.output != None:
     tempPath = os.getcwd() + '/' + args.output
 else:
@@ -88,18 +78,6 @@ if not os.path.isdir(tempPath):
     subprocess.call(['mkdir', tempPath])
     subprocess.call(['mkdir', '%s/illumina'%tempPath])
     subprocess.call(['mkdir', '%s/bc1'%tempPath])
-#if os.path.exists('%s/fq1.fq'%tempPath):
-#    subprocess.call(['rm', '%s/fq1.fq'%tempPath])
-#if os.path.exists('%s/fq2.fq'%tempPath):
-#    subprocess.call(['rm', '%s/fq2.fq'%tempPath])
-
-#for i in args.illumina1:
-#    logging.debug(i)
-#    c = subprocess.call(['cat %s >> %s/fq1.fq'%(i, tempPath)], shell = True)
-#logging.info('Concatenating fastq files for all right reads.')
-#for i in args.illumina2:
-#    logging.debug(i)
-#    c = subprocess.call(['cat %s >> %s/fq2.fq'%(i, tempPath)], shell = True)
 
 # spades  ADDED "-m 500" FOR LARGE GENOME
 logging.info('BFC error correcting...')
@@ -114,20 +92,17 @@ if a != 0:
     sys.exit(1)
 
 logging.info('SPAdes log saved at %s/illumina/spades.log'%tempPath)
-# filter graph
 logging.info('Filtering graph...')
 subprocess.call("grep -v '^P' %s/illumina/assembly_graph_with_scaffolds.gfa | awk -F'\\t' '{ if ($2 != $4) print $0}' | %s view --gfa-in - --vg | %s view -g - | awk -F'\\t' '{ if ($2 !=$4) print $0}' > %s/asm1.gfa" % (tempPath , vg, vg, tempPath), shell = True)
 subprocess.call("python2 %s/src/printnodedegrees_gfa.py %s/asm1.gfa | awk -F' ' '{ if($2 > 70 || $2==0) printf \"%%s\\n\", $1 }' > %s/asm1.wrongnodes"%(whdenovoPath, tempPath, tempPath), shell = True)
 subprocess.call('python2 %s/src/remove_wrongnodes.py %s/asm1.wrongnodes %s/asm1.gfa %s/illumina/asm1.gfa'%(whdenovoPath, tempPath, tempPath, tempPath), shell = True)
 
 logging.info('Running snarls...')
-# snarl
 subprocess.call('%s view --gfa-in --vg %s/illumina/asm1.gfa > %s/illumina/asm1.vg' % (vg, tempPath, tempPath), shell = True)
 subprocess.call('%s snarls -t -r %s/illumina/asm1.trans %s/illumina/asm1.vg > %s/illumina/asm1.snarls' % (vg, tempPath, tempPath, tempPath), shell = True)
 
 
 logging.info('Aligning...')
-# alignment
 if args.ped != None:
     for i in range(3):
         a = subprocess.call("%s -t %d -g %s/illumina/asm1.gfa -f %s -a %s/aln%d.gam --seeds-mum-count 100000 --seeds-mxm-length 10 -C 500000 -b 35" % (graphaligner, args.t, tempPath, args.pacbio[i], tempPath, i), shell = True, stdout=subprocess.PIPE)
@@ -141,20 +116,6 @@ elif args.ped == None:
         sys.exit(2) 
 subprocess.call("ls %s/aln*gam | parallel 'vg view -a {} > {}.json'"%tempPath, shell = True)
 
-#logging.info('Bubble Chain...')
-
-# bubble chain
-# ========================================For 4scripts version, change the script name (bubble_chian.py) to bubble_chain_4scripts_version.py====================================
-#if args.ped != None:
-#    subprocess.call('python3 src/bubble_chain_directed.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
-    #subprocess.call('python3 src/bubble_chain_4scripts_version.py %s/illumina/asm1.trans %s/aln0.gam %s/aln1.gam %s/aln2.gam %s/bc1/aln'%(tempPath, tempPath, tempPath, tempPath, tempPath), shell = True)
-#    for i in range(3):
-#        subprocess.call("ls %s/bc1/*trans | sed 's/.trans//' | parallel -j %d 'python3 src/combine_canu_chunks_chunks.py {}_%d.gam {}_%d_g.gam'" % (tempPath, args.t, i, i), shell = True)
-#else:
-#    subprocess.call('python3 src/bubble_chain_directed.py %s/illumina/asm1.trans %s/aln.gam %s/bc1/aln'%(tempPath, tempPath, tempPath), shell = True)
-#    subprocess.call("ls %s/bc1/*trans | sed 's/.trans//' | parallel -j %d 'python3 src/combine_canu_chunks_chunks.py {}.gam {}_g.gam'" % (tempPath, args.t), shell = True)
-
-
 logging.info('Partitioning...')
 if args.ped != None:
     subprocess.call("cd %s/trioasm/whatshap_trioasm && python -m whatshap phaseg reads %s %s/illumina/asm1.trans %s/aln0.gam.json %s/aln1.gam.json %s/aln2.gam.json -t %d -p %s/bc1/aln" % (whdenovoPath, args.ped, tempPath, tempPath, tempPath, tempPath, args.t, tempPath), shell = True)
@@ -165,10 +126,7 @@ if args.ped != None:
     logging.info('Partitioning finished. Read names of different haplotypes are saved in:')
     print('%s/HP0.reads'%tempPath)
     print('%s/HP1.reads'%tempPath)
-
+else:
+    # TODO individual case
+    pass
     
-
-#if args.ped != None:
-#    subprocess.call("cd trioasm/whatshap_trioasm && ls ../../%s/bc1/*trans | sed 's/.trans//' | parallel -j %d 'python3 -m whatshap phaseg {}.reads ../../ped.ped {}.trans {}_0_g.gam {}_1_g.gam {}_2_g.gam'" % (tempPath, args.t), shell = True)
-#elif args.ped == None:
-#    subprocess.call("cd trioasm/whatshap && ls ../../%s/bc1/*trans | sed 's/.trans//' | parallel -j %d 'python3 -m whatshap phaseg {}.reads {}.trans {}_g.gam ../../%s/illumina/asm1.vg > {}.log'" % (tempPath, args.t, tempPath), shell = True)#, args.reference, args.output), shell = True)
