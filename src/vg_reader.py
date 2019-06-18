@@ -1,12 +1,35 @@
-import sys
+from collections import defaultdict, OrderedDict
+from multiprocessing import Pool, Process, Manager
+from operator import attrgetter
 import subprocess
-from multiprocessing import Pool, Queue
+import sys
 import time
 import math
 import json
-from collections import defaultdict, OrderedDict
 import stream
 import vg_pb2
+
+def ceil(n, pos = True):
+	# whatshap has its own "math" package in the src directory.
+	# I cannot use the python original math library.
+	# pos is for when you want the result to be positive (at least 1)
+	# ceil(0) -> 1, ceil(1.1) > 2, ceil(-1) -> 1, ceil(-1.1, pos = False) -> -1
+	if n % 1 == 0:
+		if n > 0:
+			return int(n)
+		else:
+			if not pos:
+				return int(n)
+			else:
+				return 1
+	else:
+		if n // 1 + 1 < 1:
+			if not pos:
+				return int(n // 1 + 1)
+			else:
+				return 1
+		else:
+			return int(n // 1 + 1)
 
 def mergePath(tempPath, path_in_bubble, insideBack, pathBack, local_path_back):
 	out = []
@@ -49,7 +72,6 @@ def reverse_map(locus_file):
 	prev_startsnarl = 0
 	prev_endsnarl = 0
 	locus_branch_mapping = OrderedDict()
-	#locus_branch_mapping_raw = OrderedDict()
 	prev_startsnarl_orientation = -1
 	prev_endsnarl_orientation = -1
 	insidebubble = 0
@@ -57,8 +79,6 @@ def reverse_map(locus_file):
 		for data in istream:
 			l = vg_pb2.SnarlTraversal()
 			l.ParseFromString(data)
-			#TODO: make ordered doctionary locus_branch_mapping
-			# handle forward and backward case of nodes
 			current_startsnarl = l.snarl.start.node_id
 			current_startsnarl_orientation = l.snarl.start.backward
 			current_endsnarl = l.snarl.end.node_id
@@ -109,39 +129,32 @@ def reverse_map(locus_file):
 				tempPath = path_in_bubble.copy()
 
 				if current_startsnarl == prev_startsnarl and current_endsnarl == prev_endsnarl and current_endsnarl_orientation == prev_endsnarl_orientation and prev_startsnarl_orientation == current_startsnarl_orientation:
-					#trans_raw.append(l)
 					pass
 				else:
 					try:
 						locus_branch_mapping[locus_count] = per_locus
-						#locus_branch_mapping_raw[locus_count] = trans_raw
 					except NameError:
 						pass
 					locus_count -= 1
 					per_locus = []
-					#trans_raw = []
 			else:
 				if current_startsnarl == prev_startsnarl and current_endsnarl == prev_endsnarl and current_endsnarl_orientation == prev_endsnarl_orientation and prev_startsnarl_orientation == current_startsnarl_orientation:
 					if insidebubble == 2:
 						path_in_bubble = mergePath(tempPath, path_in_bubble, insideBack, pathBack, local_path_back)
 						per_locus.append(path_in_bubble)
-						#trans_raw.append(l)
 						insidebubble = 0
 						insideBack = False
 						pathBack = False
 					else:
 						per_locus.append(path_in_bubble)
-						#trans_raw.append(l)
 				else:
 					if insidebubble == 1:
 						insidebubble = 2
 						path_in_bubble = mergePath(tempPath, path_in_bubble, insideBack, pathBack, local_path_back)
 						per_locus.append(path_in_bubble)
-						#trans_raw.append(l)
 					else:
 						try:
 							locus_branch_mapping[locus_count] = per_locus
-							#locus_branch_mapping_raw[locus_count] = trans_raw
 						except NameError:
 							pass
 						locus_count -= 1
@@ -154,7 +167,6 @@ def reverse_map(locus_file):
 			prev_endsnarl_orientation = current_endsnarl_orientation
 	
 	locus_branch_mapping[locus_count] = per_locus
-	#locus_branch_mapping_raw[locus_count] = trans_raw
 	het_count= 0
 	for k,bubble in locus_branch_mapping.items():
 		if len(bubble) > 1:
@@ -174,53 +186,264 @@ def reverse_map(locus_file):
 			if len(path) > 0:
 				for edge in path:
 					allele_reverse_mapping[edge].append([k, i, len(path), len(bubble)])
-	#print('DEBUG::locus_branch_mapping',locus_branch_mapping)
-	print('Reverse_mapping done')
 
-	return reverse_mapping, locus_branch_mapping, allele_reverse_mapping
+	return reverse_mapping, allele_reverse_mapping
 
-def alleleDetect(contents, allele_reverse_mapping, chunk_id, chunkSize):
+class alignmentSets(object):
+	# An object for storing partial alignments from separate individuals.
+	# It does the post-processing on them, including global alignment, repeat
+	# detection and removing, edge building
+	def __init__(self, mode = 'trio'):
+		if mode == 'trio':
+			self.partialList = [[], [], []]
+			self.fullReadList = [[], [], []]
+			self.bubbleReadMap = [defaultdict(set), defaultdict(set), defaultdict(set)]
+		elif mode == 'individual':
+			self.partialList = [[]]
+			self.fullReadList = [[]]
+			self.bubbleReadMap = [defaultdict(set)]
 
-	readdict_allele = defaultdict(list)
-	for p in range(len(contents)):
-		partial = contents[p]
-		partial_line = chunk_id * chunkSize + p + 1 # TODO: This is a 1-based row number in original json. See if better to be 0-based.
-		g = json.loads(partial.rstrip())
+	def addPartial(self, partial, sample = 0):
+		self.partialList[sample].append(partial)
+
+	def mergeChunk(self, alignmentSetsObj):
+		for i in range(len(self.partialList)):
+			self.partialList[i].extend(alignmentSetsObj.partialList[i])
+
+	def postProcessing(self):
+		for sample in range(len(self.partialList)):
+			self.globalAlign(sample)
+		self.getBubbleReadMap()
+		self.trimRepeat()
+		self.getBubbleReadMap()
+
+	def globalAlign(self, sample):
+		# Gather all the partials of one read name together in the order of 
+		# query_position.
+		self.partialList[sample] = sorted(self.partialList[sample], key=attrgetter('name', 'query_position'))
+		lastname = ''
+		for partial in self.partialList[sample]:
+			if partial.name != lastname:
+				if lastname != '':
+					self.fullReadList[sample].append(read)
+				read = fullRead()
+				read.addPartial(partial)
+			else:
+				
+				read.addPartial(partial)
+			lastname = partial.name
+		self.fullReadList[sample].append(read)
+
+	def depth(self, node):
+		cov = 0
+		for sample in range(len(self.bubbleReadMap)):
+			cov += len(self.bubbleReadMap[sample][node])
+		return cov
+
+	def removeNodeFromRead(self, node, read):
+		for partial in read.partials:
+			pL = len(partial)
+			for i in range(pL):
+				if partial[i] == node:
+					partial[i] = None
+			for i in range(pL):
+				try:
+					partial.remove(None)
+				except:
+					break
+		if node < 0:
+			aL = len(read.alleles)
+			for i in range(aL):
+				if read.alleles[i][0] == node:
+					read.alleles[i] = None
+			for i in range(aL):
+				try:
+					read.alleles.remove(None)
+				except:
+					break
+
+	def trimRepeat(self):
+		print('Start detecting repeated nodes/bubbles')
+		repeatCollection = defaultdict(int)
+		repeatToRead = defaultdict(list)
+		for sample in range(len(self.fullReadList)):
+			for read in self.fullReadList[sample]:
+				seenNode = defaultdict(int)
+				for partial in read.partials:
+					for node in partial:
+						seenNode[node] += 1
+				for n, c in seenNode.items():
+					if c >= 2:
+						repeatCollection[n] += 1
+						repeatToRead[n].append((read, sample))
+		print('Repeat information collected')
+		print('Totally %d repetitive nodes/bubbles found'%len(list(repeatCollection.keys())))
+
+		count = 0
+		child_count = 0
+		threshold = 0.1
+		
+		for n, c in repeatCollection.items():
+			cov = self.depth(n)
+			print(n, c, cov)
+			if c / cov < threshold and cov <= 350 and cov >= 10:
+				for (read, sample) in repeatToRead[n]:
+					try:
+						self.fullReadList[sample].remove(read)
+						count += 1
+						if sample == 2:
+							child_count += 1
+					except ValueError:
+						pass
+					
+		print('Totally %d reads removed' % count)
+		print('Totally %d child reads removed' % child_count)
+		del repeatToRead
+		
+		for sample in range(len(self.fullReadList)):
+			for read in self.fullReadList[sample]:
+				for partial in read.partials:
+					pL = len(partial)
+					for i in range(pL):
+						cov = self.depth(partial[i])
+						if repeatCollection[partial[i]] / cov >= threshold or cov < 10 or cov > 350:
+							partial[i] = None
+					for i in range(pL):
+						try:
+							partial.remove(None)
+						except:
+							break
+				aL = len(read.alleles)
+				for var in range(aL):
+					cov = self.depth(read.alleles[var][0])
+					if repeatCollection[read.alleles[var][0]] / cov >= threshold or cov < 10 or cov > 350:
+						read.alleles[var] = None
+				for var in range(aL):
+					try:
+						read.alleles.remove(None)
+					except:
+						break
+
+	def getBubbleReadMap(self):
+		if len(self.bubbleReadMap) == 3:
+			self.bubbleReadMap = [defaultdict(set), defaultdict(set), defaultdict(set)]
+		if len(self.bubbleReadMap) == 1:
+			self.bubbleReadMap = [defaultdict(set)]
+		for sample in range(len(self.fullReadList)):
+			for read in self.fullReadList[sample]:
+				for partial in read.partials:
+					for node in partial:
+						self.bubbleReadMap[sample][node].add(read)
+
+	def getEdges(self):
+		edges = set()
+		for sample in range(len(self.fullReadList)):
+			for read in self.fullReadList[sample]:
+				for partial in read.partials:
+					if len(partial) > 1:
+						for i in range(len(partial)-1):
+							edge1 = partial[i], partial[i + 1]
+							edge2 = partial[i + 1], partial[i]
+							if edge1 not in edges:
+								edges.add(edge2)
+		return edges
+
+def coverage(bRM, node):
+	cov = 0
+	for sample in range(len(bRM)):
+		cov += bRM[sample][node]
+	return cov
+
+class fullRead(object):
+	# Object for storing read information after global alignment
+	def __init__(self):
+		self.name = None
+		self.partials = []
+		self.alleles = []
+	def addPartial(self, partial):
+		if self.name != None:
+			assert partial.name == self.name
+		self.name = partial.name
+		self.partials.append(partial.path)
+		self.alleles.extend(partial.alleles)		
+
+class partial(object):
+	# Simply parse a line of json content, and store the information.
+	def __init__(self, jsonLine, reverse_mapping, allele_reverse_mapping):
+		self.name = None
+		self.score = 0
+		self.query_position = 0
+		self.rawMapping = []
+		self.path = []
+		self.alleles = []
+		self.parseJson(jsonLine)
+		self.getPath(reverse_mapping)
+		self.getAllele(allele_reverse_mapping)
+		del self.rawMapping
+
+	def parseJson(self, jsonLine):
+		g = json.loads(jsonLine)
+		self.name = g['name']
 		try:
-			name = g['name']
+			self.query_position = int(g['query_position'])
 		except KeyError:
-			return None	
+			self.query_position = 0
 		try:
-			qp = g['query_position']
+			self.score = int(g['score'])
 		except KeyError:
-			qp = 0
-		try:
-			score = g['score']
-		except KeyError:
-			score = 0
-		mapping = g['path']['mapping']
-		rn_qp = name + '_' + str(qp)
+			self.score = 0
+		self.rawMapping = g['path']['mapping']
 
-		#score = g.score/len(g.sequence)
-		#if score > 0.2:
-		#   continue
+	def getPath(self, reverse_mapping):
+		# Get a node based path.
+		if len(self.rawMapping) == 1:
+			node = self.rawMapping[0]['position']['node_id']
+			if node in reverse_mapping:
+				bubble = list(reverse_mapping[node])
+				self.path = bubble
+			else:
+				self.path.append(node)
+		else:
+			for i in range(len(self.rawMapping)):
+				node = self.rawMapping[i]['position']['node_id']
+				if node in reverse_mapping:
+					bubble = reverse_mapping[node]
+					if len(bubble) == 1:
+						try:
+							if self.path[-1] == list(bubble)[0]:
+								continue
+						except IndexError:
+							pass
+						self.path.append(list(bubble)[0])
+					else:
+						bubble = list(bubble)
+						if len(self.path) == 0:
+							nextnode = self.rawMapping[i+1]['position']['node_id']
+							self.path.append(bubble[0])
+							self.path.append(bubble[1])
+							if list(reverse_mapping[nextnode])[0] == bubble[0]:
+								self.path.reverse()
+						else:
+							if self.path[-1] == bubble[0]:
+								self.path.append(bubble[1])
+							else:
+								self.path.append(bubble[0])
+				else:
+					self.path.append(node)
+
+	def getAllele(self, allele_reverse_mapping):
+		# Get an allele based variant sequence
 		prev_tmp = []
 		prev_locus = -1
-		n_variant = 0
 		added = False
-
-		for i in range(len(mapping) - 1):
-		#for i in g.path.mapping: # go over the mapping in a read
-		# TODO: check for forward or reverse strand, we may not need it for DAG.
-
-			edge1 = (mapping[i]['position']['node_id'], mapping[i+1]['position']['node_id']) # go over nodes in a mapping
-			edge2 = (mapping[i+1]['position']['node_id'], mapping[i]['position']['node_id']) # go over nodes in a mapping
-
-			if edge1 in allele_reverse_mapping or edge2 in allele_reverse_mapping: # handle start and sink node.
+		for i in range(len(self.rawMapping) - 1):
+			edge1 = (self.rawMapping[i]['position']['node_id'], self.rawMapping[i+1]['position']['node_id'])
+			edge2 = (self.rawMapping[i+1]['position']['node_id'], self.rawMapping[i]['position']['node_id'])
+			if edge1 in allele_reverse_mapping or edge2 in allele_reverse_mapping:
 				if edge1 in allele_reverse_mapping:   
 					#qualities = [10]* reverse_mapping[edge1][0][2]
 					qualitie = 1 
-					node_inf = [tuple(i[0:3]) for i in allele_reverse_mapping[edge1]] # consider (locus, branch)
+					node_inf = [tuple(i[0:3]) for i in allele_reverse_mapping[edge1]]
 				else:
 					# qualities = [10]* reverse_mapping[edge2][0][2]
 					qualities = 1 
@@ -230,206 +453,61 @@ def alleleDetect(contents, allele_reverse_mapping, chunk_id, chunkSize):
 					added = False
 					prev_tmp = tmp.copy()
 					prev_locus = tmp[0][0]
-					#len_in_path = 1
-				#else:
-					#len_in_path += 1
 				if added:
 					continue
 				interset_tmp = list(set(tmp).intersection(set(prev_tmp)))
-				if len(interset_tmp) == 1:# and interset_tmp[0][2] == len_in_path: # for complicated bubbles, but with Top-k paths. combination of some nodes uniquely determine branch.
+				if len(interset_tmp) == 1:
 					qualities = 1 
-					readdict_allele[rn_qp].append((interset_tmp[0][0], interset_tmp[0][1]))
-					#read.add_variant(interset_tmp[0][0], interset_tmp[0][1], qualities)
+					self.alleles.append((interset_tmp[0][0], interset_tmp[0][1]))
 					added = True
-	return readdict_allele
 
+def runChunk(jsonLines, sample, reverse_mapping, allele_reverse_mapping, mode, results):
+	
+	alnSet = alignmentSets(mode = mode)
+	for line in jsonLines:
+		alnSet.addPartial(partial(line, reverse_mapping, allele_reverse_mapping), sample)
+	results.append(alnSet)
 
-def AlignmentParse(contents, reverse_mapping, chunk_id, chunkSize):
-
-	consec_pairs = set()
-	#consec_pairs = defaultdict(set)
-	reads_dict = defaultdict(list)
-	readnames = []
-	bubbleCoverByRead = defaultdict(set)
-	nodeCoveredByRead = defaultdict(int)
-	for p in range(len(contents)):
-		partial = contents[p]
-		partial_line = chunk_id * chunkSize + p + 1 # TODO: This is a 1-based row number in original json. See if better to be 0-based.
-		g = json.loads(partial.rstrip())
-		try:
-			name = g['name']
-		except KeyError:
-			return None
-		try:
-			qp = g['query_position']
-		except KeyError:
-			qp = 0
-		try:
-			score = g['score']
-		except KeyError:
-			score = 0
-		readnames.append(name)
-		mapping = g['path']['mapping']
-		rn_qp = name + '_' + str(qp)
-		hasDup = False
-		if len(mapping) == 1:
-			node = mapping[0]['position']['node_id']
-			if node in reverse_mapping:
-				bubble = list(reverse_mapping[node])
-				reads_dict[rn_qp] = bubble
-				for n in bubble:
-					bubbleCoverByRead[n].add(partial_line)
-			else:
-				nodeCoveredByRead[node] += 1
-				#nodeCoveredByRead[node].add(rn_qp)
-				reads_dict[rn_qp].append(node)
-		else:
-			seenNode = set()
-			for i in range(len(mapping)):
-				node = mapping[i]['position']['node_id']
-				if node in reverse_mapping:
-					bubble = reverse_mapping[node]
-					if len(bubble) == 1:
-						try:
-							if reads_dict[rn_qp][-1] == list(bubble)[0]:
-								continue
-						except IndexError:
-							pass
-						reads_dict[rn_qp].append(list(bubble)[0])
-						if list(bubble)[0] in seenNode:
-							hasDup = True
-							#break
-						seenNode.add(list(bubble)[0])
-						bubbleCoverByRead[list(bubble)[0]].add(partial_line)
-					else:
-						bubble = list(bubble)
-						if len(reads_dict[rn_qp]) == 0:
-							nextnode = mapping[i+1]['position']['node_id']
-							if bubble[0] in seenNode or bubble[1] in seenNode:
-								hasDup = True
-								#break
-							reads_dict[rn_qp].append(bubble[0])
-							seenNode.add(bubble[0])
-							reads_dict[rn_qp].append(bubble[1])
-							seenNode.add(bubble[1])
-							bubbleCoverByRead[bubble[0]].add(partial_line)
-							bubbleCoverByRead[bubble[1]].add(partial_line)
-							if list(reverse_mapping[nextnode])[0] == bubble[0]:
-								reads_dict[rn_qp].reverse()
-						else:
-							if reads_dict[rn_qp][-1] == bubble[0]:
-								if bubble[1] in seenNode:
-									hasDup = True
-									#break
-								reads_dict[rn_qp].append(bubble[1])
-								seenNode.add(bubble[1])
-								bubbleCoverByRead[bubble[1]].add(partial_line)
-							else:
-								if bubble[0] in seenNode:
-									hasDup = True
-									#break
-								reads_dict[rn_qp].append(bubble[0])
-								seenNode.add(bubble[0])
-								bubbleCoverByRead[bubble[0]].add(partial_line)
-				else:
-					if node in seenNode:
-						hasDup = True
-						break
-					reads_dict[rn_qp].append(node)
-					seenNode.add(node)
-					nodeCoveredByRead[node] += 1
-		if hasDup:
-			continue	
-		for k in range(0,len(reads_dict[rn_qp])-1):
-			pair1= str(reads_dict[rn_qp][k])+"_"+str(reads_dict[rn_qp][k+1]) # not taking care of reverse direction now
-			pair2= str(reads_dict[rn_qp][k+1])+"_"+str(reads_dict[rn_qp][k])
-			# should take of direction, not adding pairs reverse of each other
-			if pair1 not in consec_pairs and pair2 not in consec_pairs:
-				consec_pairs.add(pair1)
-		#if name == 'm150105_192231_42177R_c100761782550000001823161607221526_s1_p0/64358/951_15471':
-		#	print('read of interests', reads_dict[rn_qp])
-
-	return reads_dict, consec_pairs, bubbleCoverByRead, nodeCoveredByRead, readnames, chunk_id
-
-def getChunk(gamJson, threadN):
-	wc = subprocess.Popen('wc -l %s'%gamJson, shell = True, stdout = subprocess.PIPE)
-	stdout, stderr = wc.communicate()
-	NR = int(stdout.decode().split()[0])
+def getChunk(gamFilecache, threadN):
+	NR = len(gamFilecache)
 	if NR % threadN == 0:
 		chunkSize = int(NR / threadN)
 	else:
-		# Why we have a math.py in this folder??? I cannot use math.ceil() now!
 		if NR % threadN != 0:
 			chunkSize = NR // threadN + 1
 		else:
 			chunkSize = NR / threadN
-		#chunkSize = math.ceil(NR / threadN)
 	chunks = []
 	for i in range(threadN):
 		if (i + 1) * chunkSize <= NR: 
 			chunks.append((i*chunkSize, (i+1)*chunkSize))
 		else:
 			chunks.append((i*chunkSize, NR))
-	return chunks, chunkSize
+	return chunks
 
-def vg_reader_multithreading(locus_file, gam_file, t):
-	reverse_mapping, locus_branch_mapping, allele_reverse_mapping = reverse_map(locus_file)
-	for n, b in locus_branch_mapping.items():
-		print(n, b)
-	bubble_of_interest = -1 #list(reverse_mapping[13153682])[0]
-	reads_dict = defaultdict()
-	consec_pairs = set()
-	bubbleCoverByRead = list()
-	nodeCoveredByRead = defaultdict(int)
-	readnames = []
-	readdict_allele = list()
-	for gam in gam_file:
-		readnames_i = []
-		bubbleCoverByRead_i = defaultdict(set)
-		readdict_allele_i = defaultdict(list)
-		chunks, chunkSize = getChunk(gam, t)
-		print('Reading', gam)
-		filecache = open(gam).readlines()
-		p = Pool(t)
-		results = []
-		results_allele = []
-		print('Processing', gam)
-		for c in range(len(chunks)):
-			results.append(p.apply_async(AlignmentParse, args=(filecache[chunks[c][0]:chunks[c][1]], reverse_mapping, c, chunkSize, )))
-			results_allele.append(p.apply_async(alleleDetect, args=(filecache[chunks[c][0]:chunks[c][1]], allele_reverse_mapping, c, chunkSize, )))
-		p.close()
-		p.join()
+def vg_read(locus_file, gam_file, t):
+	reverse_mapping, allele_reverse_mapping = reverse_map(locus_file)
+	if len(gam_file) == 3:
+		mode = 'trio'
+	elif len(gam_file) == 1:
+		mode = 'individual'
+	totalAlnSet = alignmentSets(mode = mode)
+	for i in range(len(gam_file)):
+		print('Reading', gam_file[i])
+		filecache = open(gam_file[i]).readlines()
+		chunkidx = getChunk(filecache, t)
+		m = Manager()
+		results = m.list()
+		pool = []
+		for c in range(t):
+			p = Process(target = runChunk, args = (filecache[chunkidx[c][0]:chunkidx[c][1]], i, reverse_mapping, allele_reverse_mapping, mode, results))
+			p.start()
+			pool.append(p)
+		for p in pool:
+			p.join()
 		for i in results:
-			reads_dict_c, consec_pairs_c, bubbleCoverByRead_c_i, nodeCoveredByRead_c, readnames_c_i, c = i.get()
-			#print(reads_dict_c)
-			readnames_i.append((c, readnames_c_i))
-			reads_dict.update(reads_dict_c)
-			for pair in consec_pairs_c:
-				reverse_pair = pair.split('_')[1]+'_'+pair.split('_')[0]
-				if reverse_pair not in consec_pairs:
-					consec_pairs.add(pair)
-			for b, r in bubbleCoverByRead_c_i.items():
-				try:
-					bubbleCoverByRead_i[b] = bubbleCoverByRead_i[b].union(r)
-				except KeyError:
-					bubbleCoverByRead_i[b] = r
-			for N, n in nodeCoveredByRead_c.items():
-				nodeCoveredByRead[N] += n
-		for i in results_allele:
-			readdict_allele_c_i = i.get()
-			readdict_allele_i.update(readdict_allele_c_i)
+			totalAlnSet.mergeChunk(i)
+	totalAlnSet.postProcessing()
+	edges = totalAlnSet.getEdges()
 
-		bubbleCoverByRead.append(bubbleCoverByRead_i)
-		readnames_i = sorted(readnames_i)
-		readnames_i2 = []
-
-		readdict_allele.append(readdict_allele_i)
-		for chunk_readnames in readnames_i:
-			readnames_i2.extend(chunk_readnames[1])
-		readnames.append(readnames_i2)
-
-	return reads_dict, consec_pairs, locus_branch_mapping, bubbleCoverByRead, nodeCoveredByRead, readnames, readdict_allele, bubble_of_interest
-
-#t = 3
-#reads_dict, consec_pairs, locus_branch_mapping_raw, bubbleCoverByRead, nodeCoveredByRead = vg_reader_multithreading(sys.argv[1], sys.argv[2:], t)
-#print(reads_dict)
+	return totalAlnSet, edges
