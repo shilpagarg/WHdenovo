@@ -3,22 +3,23 @@ A cost-effective approach to diploid assembly for single samples and trios. It i
 
 Installation instructions: For starting, you need to compile some dependencies.
 
-for SPAdes
+For SPAdes
 
 ```
 cd trioasm/SPAdes-3.13.0
 ./spades_compile.sh
 ```
 
-for whatshap
+For whatshap
 ```
 cd trioasm/whatshap
 python setup.py build_ext -i
 cd ../whatshap_trioasm
 python setup.py build_ext -i
 ```
+Other required dependencies are bfc, parallel and GraphAligner, which can be installed with ```conda indall```
 
-And for some python packags, you need to manully copy them into your local python environment.
+For some python packags, we suggest manully copying them into your local python environment.
 For example, if you are using Anaconda Python3.6:
 ```
 cd trioasm/dependence
@@ -27,8 +28,8 @@ cp -r google ~/anaconda3/lib/python3.6/site-packages/
 cp -r networkx ~/anaconda3/lib/python3.6/site-packages/
 cp -r stream ~/anaconda3/lib/python3.6/site-packages/
 cp -r vcf ~/anaconda3/lib/python3.6/site-packages/
-cp -r xopen-0.3.5.dist-info
-``` 
+cp -r xopen-0.3.5.dist-info ~/anaconda3/lib/python3.6/site-packages/
+```
 
 
 For simulating data
@@ -36,44 +37,41 @@ Illumina:
 ```
 python src/simulate.py illumina N-bp.fasta <het> out/illumina/
 ```
-And it will show you the file you'll need
+And it will show you the file you'll need for pacbio data simulation and WHdenovo test
+PacBio:
 ```
 python src/simulate.py pacbio sample.fastq <coverage> out/pacbio/ <mom_hap1.fasta> <mom_hap2.fasta> <dad_hap1.fasta> <dad_hap2.fasta> <child_hap1.fasta> <child_hap2.fasta>
 ```
-You can directly take the illumina data the program told you to use when simulating illumina data.
-
 
 For running assembly
-Trio case. Illumina file names and paths are provided when you simulate.
-
+Trio case:
 ```
-python src/assemble.py --illumina1 <illumina_mom_1.fq> <illumina_dad_1.fq> <illumina_dad_1.fq> \
-                       --illumina2  <illumina_mom_2.fq> <illumina_dad_2.fq> <illumina_dad_2.fq> \
-                       --pacbio <pacbio_mom.fasta> <pacbio_dad.fasta> <pacbio_child.fasta>  -p ped \ 
-                       -t <thread> 
+python src/assemble.py --illumina1 <illumina_dad_1.fq> --illumina2 <illumina_dad_2.fq> \
+                       --pacbio <pacbio_mom.fasta> <pacbio_dad.fasta> <pacbio_child.fasta>
+                       -p ped [-t <thread>] [-o out/path]
 ```
 
 e.g.
 
 ```
-python src/assemble.py --illumina1 16513_illumina_10k_1.5/mom.het1.5.cov30_1.fq 16513_illumina_10k_1.5/dad.het1.5.cov30_1.fq 16513_illumina_10k_1.5/child.het1.5.cov30_1.fq \
-                       --illumina2 16513_illumina_10k_1.5/mom.het1.5.cov30_2.fq 16513_illumina_10k_1.5/dad.het1.5.cov30_2.fq 16513_illumina_10k_1.5/child.het1.5.cov30_2.fq \
+python src/assemble.py --illumina1 16513_illumina_10k_1.5/child.het1.5.cov30_1.fq --illumina2 16513_illumina_10k_1.5/child.het1.5.cov30_2.fq \
                        --pacbio 16513_pacbio_10k_1.5_20/pacbio_mom.fasta 16513_pacbio_10k_1.5_20/pacbio_dad.fasta 16513_pacbio_10k_1.5_20/pacbio_child.fasta \
-                       -p ped -t 24
+                       -p ped -t 24 -o test.simu
 ```
-
 
 Individual case
 ```
 python src/assemble.py --illumina1 <illumina_who_1.fq> --illumina2 <illumina_who_2.fq> \ 
-                       --pacbio <pacbio_who.fasta> -t <thread>
+                       --pacbio <pacbio_who.fasta> [-t <thread>] [-o out/path]
+```
+For assembling the genome from partitioned reads:
+```
+python set_dip_asm.py -f son.inputreads.fa -0 path/to/output/HP0.reads -1 path/to/output/HP1.reads --assemble -s 15k -t 40
 ```
 
-For validation
-First you need to know which temp directory you just output
+For validating the partitioning of simulated the data.
 ```
 python src/validate.py temp_pid_mmddhhmmss/bc1 <pacbio_who.fasta>
-
 ```
 
-We acknowledge the support of dependencies such as SPAdes, vg and Aligner.
+We acknowledge the support of dependencies such as SPAdes, vg and GraphAligner.

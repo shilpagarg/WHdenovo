@@ -1,7 +1,6 @@
 from collections import defaultdict
 import sys
 
-#f = sys.argv[1]
 
 def readBothFile(allreads, tagTXT):
 	partitioned = open(allreads, 'r').read().split('\n')[:-1]
@@ -53,17 +52,6 @@ def readPred(partitioned, readIsec):
 		else:
 			pred_hap2[block_hp_nvar[0]].append(rn)
 		considered_total += 1
-	'''
-	for read in partitioned:
-		tokens = read.split()
-		if tokens[0] not in readIsec:
-			continue
-		if tokens[2] =='1':
-			pred_hap1[tokens[1]].append(tokens[0])
-		else:
-			pred_hap2[tokens[1]].append(tokens[0])
-		considered_total += 1
-	'''
 	return pred_hap1, pred_hap2, considered_total, read_block_hp_nvar
 
 def readTrue(tagged, readIsec):
@@ -88,13 +76,10 @@ def readTrue(tagged, readIsec):
 
 def compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2, read_block_hp_nvar):
 	predBlocks = list(pred_hap1.keys())
-	#trueBlocks = list(trueHap1.keys())
 	successCount = 0
 	correct_reads = []
 	wrong_reads = []
 	for k1 in predBlocks:
-			#for k2 in trueBlocks:
-			
 			successCount += max(len(list(set(pred_hap1[k1]).intersection(set(trueHap1)))), len(list(set(pred_hap1[k1]).intersection(set(trueHap2)))))
 			successCount += max(len(list(set(pred_hap2[k1]).intersection(set(trueHap1)))), len(list(set(pred_hap2[k1]).intersection(set(trueHap2)))))
 			if len(list(set(pred_hap1[k1]).intersection(set(trueHap1)))) > len(list(set(pred_hap1[k1]).intersection(set(trueHap2)))):
@@ -131,10 +116,8 @@ def compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2, read_block_hp_nva
 		hp = bhn[1]
 		ow.write(i + '\t' + hp + '\n')
 	ow.close()
-	#print('successCount/allTagged:', success_rate)
 
 
-#compute_read_partitioning_accuracy()
 allreads = sys.argv[1]
 tagTXT = sys.argv[2]
 partitioned, tagged, readIsec = readBothFile(allreads, tagTXT)
