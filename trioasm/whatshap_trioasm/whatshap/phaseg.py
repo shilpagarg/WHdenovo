@@ -282,8 +282,6 @@ def reverse_complement(seq):
 # assumption that ped has m,f,c format and the GAMs are also in m,f,c.
 # phase_input_files is a list of paths to gams files for m, f and c.
 
-# def run_phaseg(locus_file, phase_input_files, use_ped_samples=False, read_list_filename=None):
-
 def process_readset(Rawreadset, sample):
 
     readset = ReadSet()
@@ -348,21 +346,13 @@ def run_phaseg(read_list_filename, prefix, locus_file, use_ped_samples, block_re
         selected_indices = readselection(readset, max_coverage)
         selected_reads = readset.subset(selected_indices)
         readsets[sample] = selected_reads
-    '''
-    for sample in [0, 1, 2]:
-        # with timers('read_bam'):
-        readset, alleles_per_pos, locus_branch_mapping, readset_all = vg_reader(locus_file, phase_input_files[sample], sample)
-        total_readsets[sample] = readset_all
-        selected_indices = readselection(readset, max_coverage)
-        selected_reads = readset.subset(selected_indices)
-        readsets[sample] = selected_reads
-    '''
     # Merge reads into one ReadSet (note that each Read object
     # knows the sample it originated from).
     all_reads = ReadSet()
     for sample, readset in readsets.items():
         for read in readset:
-            assert read.is_sorted(), "Add a read.sort() here"
+            #assert read.is_sorted(), "Add a read.sort() here"
+            read.sort()
             all_reads.add(read)
     all_reads.sort()
     accessible_positions = sorted(all_reads.get_positions())
@@ -372,7 +362,6 @@ def run_phaseg(read_list_filename, prefix, locus_file, use_ped_samples, block_re
              #assert read.is_sorted(), "Add a read.sort() here"
              read.sort()
              total_reads.add(read)
-    
     all_heterozygous = False
 
     recombcost = [100] * len(accessible_positions) 
@@ -384,7 +373,6 @@ def run_phaseg(read_list_filename, prefix, locus_file, use_ped_samples, block_re
     pedigree.add_relationship('mother', 'father', 'child') 
     dp_table = PedigreeDPTable(all_reads, recombcost, pedigree, distrust_genotypes = not all_heterozygous)
     superreads_list, transmission_vector = dp_table.get_super_reads()
-    print('superreads_list', superreads_list[2])
     master_block= None
     if distrust_genotypes:
         hom_in_any_sample = set()
@@ -416,8 +404,8 @@ def run_phaseg(read_list_filename, prefix, locus_file, use_ped_samples, block_re
         haplotag(sample_superreads, total_readsets[sample], components[sample], accessible_positions, read_list_filename, 1, f)
 
     
-    if read_list_filename:
-        write_read_list(all_reads, dp_table.get_optimal_partitioning(), components, {0:0, 1:1, 2:2}, read_list_filename)
+    #if read_list_filename:
+    #    write_read_list(all_reads, dp_table.get_optimal_partitioning(), components, {0:0, 1:1, 2:2}, read_list_filename)
 
 def add_arguments(parser):
    arg = parser.add_argument
@@ -427,27 +415,15 @@ def add_arguments(parser):
    arg('locus_file', metavar = 'LOCUS', help = 'variants in LOCUS file to phase')
    arg('phase_input_files', nargs = 3, metavar = 'PHASEINPUT',
        help='BAM, CRAM or VCF file(s) with phase information, either through '
-           'sequencing reads (BAM/CRAM) or through phased blocks (VCF)')
+           'sequencing reads (BAM/CRAM) or through phased blocks (VCF)') # TODO for ref based  the number is changed
    arg('-p', '--prefix', metavar = 'STR', required = False, help = 'Output partitioning results for each block into files with this prefix.')
    arg('-t', '--threads', metavar = 'INT', type = int, required = False, default = 4, help = 'Number of threads to use. [4]')
 
 def main(args):
     total_readsets = bc(args.locus_file, args.phase_input_files, args.threads)
-    #for bi in range(len(total_readsets)):
-    #    print(bi, 'block')
-    #    for ind in range(len(total_readsets[bi])):
-    #        print(ind, 'individual')
-    #        for r in total_readsets[bi][ind]:
-    #            print(r)
     p = Pool(args.threads)
+    results = []
     for block_id in range(len(total_readsets)):
-        #trio_readsets = []
-        #trio_readsetsAll = []
-        #for sample in range(3):
-        #    readset, readsetAll = process_readset(total_readsets[block_id][sample], sample)
-        #    trio_readsets.append(readset)
-        #    trio_readsetsAll.append(readsetAll)
-        result = p.apply_async(func=run_phaseg, args=(block_id, args.prefix, args.locus_file, args.use_ped_samples, total_readsets[block_id]))
+        p.apply_async(func=run_phaseg, args=(block_id, args.prefix, args.locus_file, args.use_ped_samples, total_readsets[block_id]))
     p.close()
     p.join()
-    #result.get()
