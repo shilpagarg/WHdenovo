@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 class aux_unitigs():
-	"""docstring for ClassName"""
+	# a module for filtering the unitig connections
 	def __init__(self, unitigs):
 		self.unitigs = unitigs
 		self.endMap = dict()
@@ -15,6 +15,8 @@ class aux_unitigs():
 		self.connections = defaultdict(int)
 		self.pair = defaultdict(set)
 	def addConnection(self, new_g):
+		# add connections detected from reads. Merge equivalent 
+		# connections together
 		connections = []
 		for i in range(0, len(new_g), 2):
 			node = new_g[i]
@@ -46,23 +48,38 @@ class aux_unitigs():
 				self.connections[(u1, u2)] += 1
 
 	def returnConfident(self):
+		# First pick the most prevalent type of connection between 
+		# two specific unitigs. Then sort all connections by number 
+		# of supporting reads and pick from top, allowing only one 
+		# connection for one unitig end.
 		allout = []
 		for pair, connections in self.pair.items():
 			out = (0, ())
 			for connection in connections:
 				if self.connections[connection] > out[0]:
 					out = (self.connections[connection], connection)
-			#if out[1] >= 100:
 			allout.append(out)
 		allout = sorted(allout)[::-1]
 		AUX = []
-		connected = defaultdict(int)
+		connected = set()
 		for connection in allout:
+			# connection = (n, (uid1, dir1), (uid2, dir2))
+			# n is the frequency of this type of connection. 
 			new_g = []
-			if connected[connection[1][0][0]] == 2 or connected[connection[1][1][0]] == 2:
+			if connection[0] < 5:
 				continue
-			connected[connection[1][0][0]] += 1
-			connected[connection[1][1][0]] += 1
+			SE1 = (connection[1][0][0], connection[1][0][1], 0)
+			eSE1 = equivStickyEnd(SE1)
+			SE2 = (connection[1][1][0], connection[1][1][1], 1)
+			eSE2 = equivStickyEnd(SE2)
+			if SE1 in connected or eSE1 in connected or SE2 in connected or eSE2 in connected:
+				#if connected[connection[1][0][0]] == 2 or connected[connection[1][1][0]] == 2:
+				continue
+			print(connection)
+			connected.add(SE1)
+			connected.add(SE2)
+			#connected[connection[1][0][0]] += 1
+			#connected[connection[1][1][0]] += 1
 			if connection[1][0][1] == 1:
 				new_g.append(self.unitigs[connection[1][0][0]][0])
 				new_g.append(self.unitigs[connection[1][0][0]][-1])
@@ -82,21 +99,12 @@ def equivConn(connection):
 	u1 = connection[0]
 	u2 = connection[1]
 	return ((u2[0], -1 * u2[1]), (u1[0], -1 * u1[1]))
-'''
-unitigs = [[1,2,3],[4,5,6],[7,8,9]]
 
-aux = aux_unitigs(unitigs)
-aux.addConnection([3,1,4,6,9,7]) # 0,-1  1,1  2,-1
-aux.addConnection([6,4,1,3])     # 1,-1  0,1
-aux.addConnection([1,3, 4, 6])   # 0,1   1,1
-aux.addConnection([7, 9, 6,4, 1, 3])   # 0,1   1,1
-aux.addConnection([6,4,3,1])     # 1,-1  0,-1
-aux.addConnection([1,3,6,4])
-aux.addConnection([4,6,3,1])
-aux.addConnection([6,4,9,7])
-print('==================')
-print(aux.connections)
-print(aux.pair)
-AUX = aux.returnConfident()
-print(AUX)
-'''
+def equivStickyEnd(end):
+	# if in a connection we see ((0, 1), (1, 1))
+	# Then I define "stickyEnd" for this pair as (0, 1, 0) and (1, 1, 1), 
+	# and their equivalents are (0, -1, 1) and (1, -1, 0), 
+	# where the 1st of the triple is unitig ID, 2nd is the direction against 
+	# the unitig's original direction (1 for same -1 for reverse), and in the
+	# 3rd position 0 for on the left 1 for on the right.
+	return (end[0], -1 * end[1], abs(end[2] - 1))
