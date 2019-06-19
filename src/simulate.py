@@ -43,6 +43,8 @@ pacbioccs.add_argument('dir', type = str,
 args = parser.parse_args()
 
 pid = os.getpid()
+pwd = os.getcwd()
+whdenovoPath = '/'.join(sys.path[0].split('/')[:-1])
 
 family = ['mom1', 'mom2', 'dad1', 'dad2', 'child1', 'child2']
 # ILLUMINA part
@@ -50,12 +52,12 @@ if args.subparser == 'illumina':
 
 	mom1FA = args.fasta
 	het = args.het
-	illuminaOutput = str(pid) + '_' + args.dir
+	illuminaOutput = pwd + '/' + str(pid) + '_' + args.dir
 	if not os.path.exists(mom1FA):
 		raise FileNotFoundError(mom1FA + ' not found.')
 		sys.exit(1)
 	# Generate haplotypes.
-	simulate_mut = 'src/simulate_mutation.py'
+	simulate_mut = whdenovoPath + '/src/simulate_mutation.py'
 	subprocess.run('mkdir %s'%illuminaOutput, shell = True	)
 	subprocess.call('python3 %s %s %s %s/mom2.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
 	subprocess.call('python3 %s %s %s %s/dad1.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
@@ -65,7 +67,7 @@ if args.subparser == 'illumina':
 	subprocess.call('cp %s %s/mom1.het%s.cov30.fasta'%(mom1FA, illuminaOutput, het), shell = True)
 
 	# simulate illumina reads
-	art = 'trioasm/art_bin_MountRainier/art_illumina'
+	art = whdenovoPath + '/trioasm/art_bin_MountRainier/art_illumina'
 	for i in family:
 		subprocess.call('%s  -ss HSXn -sam -i %s/%s.het%s.cov30.fasta -p -l 150 -f 15 -m 200 -s 10 -o %s/%s.het%s.cov30_'%(art, illuminaOutput, i, het, illuminaOutput, i, het), shell = True, stdout=subprocess.PIPE)
 
@@ -103,12 +105,12 @@ elif args.subparser == 'pacbioccs':
         mom1FA = args.fasta
         fq = 'test/pacbioccs.sample.fastq'
         het = args.het
-        pbccsOutput = str(pid) + '_' + args.dir
+        pbccsOutput = pwd + str(pid) + '_' + args.dir
         if not os.path.exists(mom1FA):
                 raise FileNotFoundError(mom1FA + ' not found.')
                 sys.exit(1)
         # Generate haplotypes.
-        simulate_mut = 'src/simulate_mutation.py'
+        simulate_mut = whdenovoPath + '/src/simulate_mutation.py'
         subprocess.run('mkdir %s'%pbccsOutput, shell = True  )
         subprocess.call('python3 %s %s %s %s/mom2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
         subprocess.call('python3 %s %s %s %s/dad1'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
@@ -118,10 +120,6 @@ elif args.subparser == 'pacbioccs':
         subprocess.call('cp %s %s/mom1.fasta'%(mom1FA, pbccsOutput), shell = True)
         FAs = ['mom1.fasta',  'mom2.fasta', 'dad1.fasta', 'dad2.fasta', 'child1.fasta', 'child2.fasta']
 
-        '''
-        pbsim --seed 10 --prefix mom1 --depth 20 --length-min 12000 --length-max 13000 --accuracy-min 0.99 --sample-fastq ../test/analysis-PGP1_1
-6.5_Elf4-5pM-42165-m54336_190222_142322.Q20.fastq  --accuracy-max 1 mom1.het1.cov30.fasta > pbsim.log 2>&1
-        '''
         for i in range(6):
                 a = subprocess.call('pbsim --seed %d --prefix %s/%s --depth 10 --sample-fastq %s %s/%s > %s/pbsim.log 2>&1'%(i, pbccsOutput, family[i], fq, pbccsOutput, FAs[i], pbccsOutput), shell = True
 )

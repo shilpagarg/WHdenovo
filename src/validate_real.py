@@ -1,5 +1,5 @@
 from collections import defaultdict
-import sys
+import sys, os, subprocess
 
 
 def readBothFile(allreads, tagTXT):
@@ -118,7 +118,9 @@ def compute_accuracy(pred_hap1, pred_hap2, trueHap1, trueHap2, read_block_hp_nva
 	ow.close()
 
 
-allreads = sys.argv[1]
+path = os.path.abspath(sys.argv[1])
+subprocess.call('cat %s/*.allreads > %s/all.allreads'%(path, path), shell = True)
+allreads = '%s/all.allreads'%path
 tagTXT = sys.argv[2]
 partitioned, tagged, readIsec = readBothFile(allreads, tagTXT)
 partitioned = partition_selection(partitioned, readIsec)
