@@ -3,6 +3,20 @@ A cost-effective approach to diploid assembly for single samples and trios. It i
 
 ### Installation
 
+For cloning this repository, you will need the help of [Git Large File Storage](https://github.com/git-lfs/git-lfs), because of some usable pre-compiled dependencies.
+
+This can be installed in various ways:
+```
+sudo yum install -y git-lfs
+```
+```
+sudo apt-get install git-lfs
+```
+Then clone this repository with:
+```
+git lfs clone https://github.com/shilpagarg/WHdenovo.git
+```
+
 For starting, you need to compile some dependencies.
 
 For SPAdes
