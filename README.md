@@ -46,7 +46,7 @@ python src/simulate.py pacbio sample.fastq <coverage> out/pacbio/ <mom_hap1.fast
 For running assembly
 Trio case:
 ```
-python src/assemble.py --illumina1 <illumina_dad_1.fq> --illumina2 <illumina_dad_2.fq> \
+python src/partition.py --illumina1 <illumina_child_1.fq> --illumina2 <illumina_child_2.fq> \
                        --pacbio <pacbio_mom.fasta> <pacbio_dad.fasta> <pacbio_child.fasta>
                        -p ped [-t <thread>] [-o out/path]
 ```
@@ -54,7 +54,7 @@ python src/assemble.py --illumina1 <illumina_dad_1.fq> --illumina2 <illumina_dad
 e.g.
 
 ```
-python src/assemble.py --illumina1 16513_illumina_10k_1.5/child.het1.5.cov30_1.fq --illumina2 16513_illumina_10k_1.5/child.het1.5.cov30_2.fq \
+python src/partition.py --illumina1 16513_illumina_10k_1.5/child.het1.5.cov30_1.fq --illumina2 16513_illumina_10k_1.5/child.het1.5.cov30_2.fq \
                        --pacbio 16513_pacbio_10k_1.5_20/pacbio_mom.fasta 16513_pacbio_10k_1.5_20/pacbio_dad.fasta 16513_pacbio_10k_1.5_20/pacbio_child.fasta \
                        -p ped -t 24 -o test.simu
 ```
@@ -72,11 +72,12 @@ Flye is the preset assembler in our pipeline. If you wish to use other assembler
 
 For validating the partitioning of simulated the data.
 ```
-python src/validate.py temp_pid_mmddhhmmss/bc1 <pacbio_who.fasta>
+python src/validate.py out/path/bc1 <pacbio_who.fasta>
 ```
 For validating the partitioning of real data when you have ground truth classification:
 ```
-commands
+python src/validate_real.py out/path/bc1 <tagged.reads.txt>
 ```
+An example for tagged.reads.txt is at test/haplotagged.reads.txt, which should include the HP tag and PS tag from haplotagged BAM file.
 
-We acknowledge the support of dependencies such as SPAdes, vg and GraphAligner.
+We acknowledge the support of dependencies such as bfc, SPAdes, vg and GraphAligner.
