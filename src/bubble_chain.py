@@ -72,8 +72,6 @@ def find_bubble_chains(consec_pairs):
 					hashse[j]=1
 
 	print('total number of unitigs', len(unitigs))
-	for i in range(len(unitigs)):
-		print(i, unitigs[i])
 	return unitigs
 
 def aux_contigs(unitigs, totalAlnSet):
@@ -257,7 +255,6 @@ def group_readset(contig, totalAlnSet):
 		if int(node) < 0:
 			phaseg_variant += 1
 			bc_variants[int(node)] = phaseg_variant
-
 	readsets = []
 	for sample in range(len(totalAlnSet.bubbleReadMap)):
 		readset_ind = set()
@@ -281,11 +278,14 @@ def group_readset(contig, totalAlnSet):
 
 def bc(locus_file, phase_input_files, t):
 	print('Input dataset:', locus_file, phase_input_files)
-	totalAlnSet, consec_pairs = test(locus_file, phase_input_files, t)
+	totalAlnSet, consec_pairs = vg_read(locus_file, phase_input_files, t)
 	unitigs = find_bubble_chains(consec_pairs)
 	
 	AUX = aux_contigs(unitigs, totalAlnSet)
 	final_ctgs = find_contigs(unitigs, AUX)
 	total_readsets = []
+	for contig in final_ctgs:
+		readsets = group_readset(contig, totalAlnSet)
+		total_readsets.append(readsets)
 
 	return total_readsets

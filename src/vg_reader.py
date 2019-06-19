@@ -285,8 +285,7 @@ class alignmentSets(object):
 		
 		for n, c in repeatCollection.items():
 			cov = self.depth(n)
-			print(n, c, cov)
-			if c / cov < threshold and cov <= 350 and cov >= 10:
+			if c / cov < threshold and cov <= 350 and cov >= 12:
 				for (read, sample) in repeatToRead[n]:
 					try:
 						self.fullReadList[sample].remove(read)
@@ -306,7 +305,7 @@ class alignmentSets(object):
 					pL = len(partial)
 					for i in range(pL):
 						cov = self.depth(partial[i])
-						if repeatCollection[partial[i]] / cov >= threshold or cov < 10 or cov > 350:
+						if repeatCollection[partial[i]] / cov >= threshold or cov < 12 or cov > 350:
 							partial[i] = None
 					for i in range(pL):
 						try:
@@ -316,7 +315,7 @@ class alignmentSets(object):
 				aL = len(read.alleles)
 				for var in range(aL):
 					cov = self.depth(read.alleles[var][0])
-					if repeatCollection[read.alleles[var][0]] / cov >= threshold or cov < 10 or cov > 350:
+					if repeatCollection[read.alleles[var][0]] / cov >= threshold or cov < 12 or cov > 350:
 						read.alleles[var] = None
 				for var in range(aL):
 					try:

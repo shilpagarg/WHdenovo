@@ -80,9 +80,11 @@ if not os.path.isdir(tempPath):
     subprocess.call(['mkdir', '%s/bc1'%tempPath])
 
 # spades  ADDED "-m 500" FOR LARGE GENOME
-logging.info('BFC error correcting...')
-subprocess.call('bfc -t %d -s %s %s > %s/cor.1.fq'%(args.t, args.size, args.illumina1, tempPath), shell = True)
-subprocess.call('bfc -t %d -s %s %s > %s/cor.2.fq'%(args.t, args.size, args.illumina2, tempPath), shell = True)
+logging.info('bfc error correcting...')
+subprocess.call('bfc -t %d -s %s %s 1> %s/cor.1.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina1, tempPath, tempPath), shell = True)
+subprocess.call('bfc -t %d -s %s %s 1> %s/cor.2.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina2, tempPath, tempPath), shell = True)
+logging.info('bfc log saved at %s/bfc.log'%tempPath)
+ 
 logging.info('Running spades...')
 spades_cmd = "python2 %s/trioasm/SPAdes-3.13.0/spades.py -t %d -k %d -m 500 -1 %s/cor.1.fq -2 %s/cor.2.fq --only-assembler -o %s/illumina/" % (whdenovoPath, args.t, args.k, tempPath, tempPath, tempPath)
 spades_cmd = spades_cmd.split()
@@ -90,17 +92,15 @@ a = subprocess.call(spades_cmd, shell=False, stdout=subprocess.PIPE)
 if a != 0:
     logging.error('Error while running spades. Error Code: %d'%a)
     sys.exit(1)
-
 logging.info('SPAdes log saved at %s/illumina/spades.log'%tempPath)
+
 logging.info('Filtering graph...')
 subprocess.call("grep -v '^P' %s/illumina/assembly_graph_with_scaffolds.gfa | awk -F'\\t' '{ if ($2 != $4) print $0}' | %s view --gfa-in - --vg | %s view -g - | awk -F'\\t' '{ if ($2 !=$4) print $0}' > %s/asm1.gfa" % (tempPath , vg, vg, tempPath), shell = True)
 subprocess.call("python2 %s/src/printnodedegrees_gfa.py %s/asm1.gfa | awk -F' ' '{ if($2 > 70 || $2==0) printf \"%%s\\n\", $1 }' > %s/asm1.wrongnodes"%(whdenovoPath, tempPath, tempPath), shell = True)
 subprocess.call('python2 %s/src/remove_wrongnodes.py %s/asm1.wrongnodes %s/asm1.gfa %s/illumina/asm1.gfa'%(whdenovoPath, tempPath, tempPath, tempPath), shell = True)
-
 logging.info('Running snarls...')
 subprocess.call('%s view --gfa-in --vg %s/illumina/asm1.gfa > %s/illumina/asm1.vg' % (vg, tempPath, tempPath), shell = True)
 subprocess.call('%s snarls -t -r %s/illumina/asm1.trans %s/illumina/asm1.vg > %s/illumina/asm1.snarls' % (vg, tempPath, tempPath, tempPath), shell = True)
-
 
 logging.info('Aligning...')
 if args.ped != None:
@@ -118,9 +118,9 @@ subprocess.call("ls %s/aln*gam | parallel 'vg view -a {} > {}.json'"%tempPath, s
 
 logging.info('Partitioning...')
 if args.ped != None:
-    subprocess.call("cd %s/trioasm/whatshap_trioasm && python -m whatshap phaseg reads %s %s/illumina/asm1.trans %s/aln0.gam.json %s/aln1.gam.json %s/aln2.gam.json -t %d -p %s/bc1/aln" % (whdenovoPath, args.ped, tempPath, tempPath, tempPath, tempPath, args.t, tempPath), shell = True)
-    subprocess.call("ls %s/bc1/aln*allreads | parallel -j%d \"awk '\\$3 == 1 {print \\$1}' {} > {}.hp1.reads\"" % (tempPath, args.t), shell = True)
-    subprocess.call("ls %s/bc1/aln*allreads | parallel -j%d \"awk '\\$3 == 0 {print \\$1}' {} > {}.hp0.reads\"" % (tempPath, args.t), shell = True)
+    subprocess.call("cd %s/trioasm/whatshap_trioasm && python -m whatshap phaseg reads %s %s/illumina/asm1.trans %s/aln0.gam.json %s/aln1.gam.json %s/aln2.gam.json -t %d -p %s/bc1/aln > %s/partition.log" % (whdenovoPath, args.ped, tempPath, tempPath, tempPath, tempPath, args.t, tempPath, tempPath), shell = True)
+    subprocess.call("ls %s/bc1/*allreads | parallel -j%d \"awk '\\$3 == 1 {print \\$1}' {} > {}.hp1.reads\"" % (tempPath, args.t), shell = True)
+    subprocess.call("ls %s/bc1/*allreads | parallel -j%d \"awk '\\$3 == 0 {print \\$1}' {} > {}.hp0.reads\"" % (tempPath, args.t), shell = True)
     subprocess.call("cat %s/bc1/*hp1.reads | sort | uniq > %s/HP1.reads" % (tempPath,tempPath), shell = True)
     subprocess.call("cat %s/bc1/*hp0.reads | sort | uniq > %s/HP0.reads" % (tempPath,tempPath), shell = True)
     logging.info('Partitioning finished. Read names of different haplotypes are saved in:')
