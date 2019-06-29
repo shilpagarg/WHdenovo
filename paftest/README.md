@@ -2,7 +2,7 @@
 Another method for diploid assembly, which works only with PacBioCCS data.
 
 ```
-usage: call_ov_var.new.py [-h] [-p PAF] [-o GFA] [-t INT] [--het FLOAT]
+usage: haplotype.py [-h] [-p PAF] [-o GFA] [-t INT] [--het FLOAT]
                           [-c INT]
                           FASTA
 positional arguments:
@@ -26,7 +26,7 @@ In the output GFA graph, we include an extra column in the "L" lines (for edges)
 
 An example run on our test data:
 ```
-python call_ov_var.new.py -t 40 test.fasta > test.gfa
+python haplotype.py -t 40 test.fasta > test.gfa
 ```
 For visualization of the graph, you may extract only the GREEN edges to have a clear view of the partitioning.
 ```
