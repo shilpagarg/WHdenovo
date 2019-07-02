@@ -6,8 +6,6 @@ from cigarStringParser2 import snpDetector
 from Bio import SeqIO
 import networkx as nx
 import subprocess
-import clustering
-from stringGraph import *
 
 
 class pileup():
