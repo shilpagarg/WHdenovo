@@ -103,9 +103,9 @@ elif args.subparser == 'pacbio':
 
 elif args.subparser == 'pacbioccs':
         mom1FA = args.fasta
-        fq = 'test/pacbioccs.sample.fastq'
+        fq = ['test/pacbioccs.sample1.fastq', 'test/pacbioccs.sample2.fastq', 'test/pacbioccs.sample3.fastq', 'test/pacbioccs.sample4.fastq', 'test/pacbioccs.sample5.fastq', 'test/pacbioccs.sample6.fastq']
         het = args.het
-        pbccsOutput = pwd + str(pid) + '_' + args.dir
+        pbccsOutput = pwd + '/' +  str(pid) + '_' + args.dir
         if not os.path.exists(mom1FA):
                 raise FileNotFoundError(mom1FA + ' not found.')
                 sys.exit(1)
@@ -121,7 +121,7 @@ elif args.subparser == 'pacbioccs':
         FAs = ['mom1.fasta',  'mom2.fasta', 'dad1.fasta', 'dad2.fasta', 'child1.fasta', 'child2.fasta']
 
         for i in range(6):
-                a = subprocess.call('pbsim --seed %d --prefix %s/%s --depth 10 --sample-fastq %s %s/%s > %s/pbsim.log 2>&1'%(i, pbccsOutput, family[i], fq, pbccsOutput, FAs[i], pbccsOutput), shell = True
+                a = subprocess.call('pbsim --seed %d --prefix %s/%s --depth 10 --sample-fastq %s %s/%s > %s/pbsim.log 2>&1'%(i, pbccsOutput, family[i], fq[i], pbccsOutput, FAs[i], pbccsOutput), shell = True
 )
                 subprocess.call("awk 'NR%%4==1 {printf(\"%%s_%s\\n\",$0)} NR%%4!=1 {print}\\' %s/%s_0001.fastq > %s/pacbioccs_%s.fastq" % (family[i], pbccsOutput, family[i], pbccsOutput, family[i]
 ), shell = True)
