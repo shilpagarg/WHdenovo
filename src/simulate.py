@@ -112,16 +112,17 @@ elif args.subparser == 'pacbioccs':
         # Generate haplotypes.
         simulate_mut = whdenovoPath + '/src/simulate_mutation.py'
         subprocess.run('mkdir %s'%pbccsOutput, shell = True  )
+        subprocess.call('python3 %s %s %s %s/mom1'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
         subprocess.call('python3 %s %s %s %s/mom2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
         subprocess.call('python3 %s %s %s %s/dad1'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
         subprocess.call('python3 %s %s %s %s/dad2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
         subprocess.call('cp %s/mom2.fasta %s/child1.fasta'%(pbccsOutput, pbccsOutput), shell = True)
         subprocess.call('cp %s/dad1.fasta %s/child2.fasta'%(pbccsOutput, pbccsOutput), shell = True)
-        subprocess.call('cp %s %s/mom1.fasta'%(mom1FA, pbccsOutput), shell = True)
+#        subprocess.call('cp %s %s/mom1.fasta'%(mom1FA, pbccsOutput), shell = True)
         FAs = ['mom1.fasta',  'mom2.fasta', 'dad1.fasta', 'dad2.fasta', 'child1.fasta', 'child2.fasta']
 
         for i in range(6):
-                a = subprocess.call('pbsim --seed %d --prefix %s/%s --depth 10 --sample-fastq %s %s/%s > %s/pbsim.log 2>&1'%(i, pbccsOutput, family[i], fq[i], pbccsOutput, FAs[i], pbccsOutput), shell = True
+                a = subprocess.call('pbsim --seed %d --prefix %s/%s --depth 20 --sample-fastq %s %s/%s > %s/pbsim.log 2>&1'%(i, pbccsOutput, family[i], fq[i], pbccsOutput, FAs[i], pbccsOutput), shell = True
 )
                 subprocess.call("awk 'NR%%4==1 {printf(\"%%s_%s\\n\",$0)} NR%%4!=1 {print}\\' %s/%s_0001.fastq > %s/pacbioccs_%s.fastq" % (family[i], pbccsOutput, family[i], pbccsOutput, family[i]
 ), shell = True)
