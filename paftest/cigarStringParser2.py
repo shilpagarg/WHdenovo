@@ -1,4 +1,4 @@
-#import sys
+import sys
 
 def reverse_complement(b):
     d = {'a':'t', 't':'a', 'g':'c', 'c':'g'}
@@ -10,8 +10,15 @@ def reverse_complement(b):
             tmp[d[base]] = n
         return tmp
 
+def log(*content):
+    out = []
+    for i in content:
+        out.append(str(i))
+    sys.stderr.write(' '.join(out)+'\n')
+
 def snpDetector(cigar, target_coord, query_coord, query_dir):
     snp_coord = []
+    del_region = []
     cigar = list(cigar)
     #target_coord -= 1
     matchRegion = [] # [(target0, target1, query0, query1)]
@@ -31,11 +38,11 @@ def snpDetector(cigar, target_coord, query_coord, query_dir):
             target_coord += matchLength
             if query_dir == '+':
                 query_coord += matchLength
-                matchRegion.append((target_prev, target_coord, query_prev, query_coord))
+                #matchRegion.append((target_prev, target_coord, query_prev, query_coord))
                 #print(target_prev, target_coord, query_prev, query_coord)
             else:
                 query_coord -= matchLength
-                matchRegion.append((target_prev, target_coord, query_coord, query_prev))
+                #matchRegion.append((target_prev, target_coord, query_coord, query_prev))
                 #print(target_prev, target_coord, query_coord, query_prev)
             for i in range(len(match)):
                 cigar.pop(0)
@@ -71,8 +78,9 @@ def snpDetector(cigar, target_coord, query_coord, query_dir):
             #if len(queryDeletion) > 100:
             #    return None
             #print(target_coord, ''.join(queryDeletion), '-', query_coord)
+            target_prev = target_coord
             target_coord += len(queryDeletion)
-            
+            del_region.append((target_prev, target_coord))
             for i in queryDeletion:
                 cigar.pop(0)
         elif cigar[0] == '*':
@@ -94,14 +102,15 @@ def snpDetector(cigar, target_coord, query_coord, query_dir):
                 query_coord -= 1
             #print(target_prev, snp[0], snp[1], query_prev)
             if query_dir == '+':
-                snp_coord.append((target_prev, snp[0], snp[1]))
+                snp_coord.append((target_prev, query_prev, snp[0], snp[1]))
             else:
-                snp_coord.append((target_prev, snp[0], snp[1]))
+                snp_coord.append((target_prev, query_coord, snp[0], snp[1]))
             for i in snp:
                 cigar.pop(0)
         else:
             break
-    return snp_coord
+
+    return snp_coord, del_region
 '''
 paf = open(sys.argv[1], 'r').readlines()
 
@@ -126,3 +135,4 @@ for pafLine in paf:
     print(snp_coord)
 
 '''
+

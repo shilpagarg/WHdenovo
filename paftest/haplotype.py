@@ -112,9 +112,26 @@ class pileup():
 
         for pos, var_count in self.pos_var_count.items():
             Bad = 0
+            good = 0
             altN = 0
             for b, n in var_count.items():
+                log('looking at', pos, b, n, self.depth(pos))
+                if (n / self.depth(pos) > 0.2 and n / self.depth(pos) < 0.8) and (n > 3 and self.depth(pos) - n > 3):
+                    log('good')
+                    good += 1
                 altN += n
+            refN = self.depth(pos) - altN
+            if (refN / self.depth(pos) > 0.2 and refN / self.depth(pos) < 0.8) and (refN > 3 and self.depth(pos) - refN > 3):
+                log('ref', refN, 'good')
+                good += 1
+                
+            if good < 2 or self.depth(pos) <= 5:
+                log('removing position', pos, 'count:', altN, 'depth:', self.depth(pos))
+                del self.posToVarread[pos]
+                badPos.add(pos)
+            else:
+                tmp[pos] = var_count.copy()
+            '''
             if altN / self.depth(pos) <= 0.1 or altN / self.depth(pos) >= 0.9 or altN < 3 or self.depth(pos) - altN < 3: # THRESHOLD: allele freq to remove error
                 Bad += 1
                 log('removing position', pos, 'count:', altN, 'depth:', self.depth(pos))
@@ -123,7 +140,7 @@ class pileup():
                 badPos.add(pos)
             else:
                 tmp[pos] = var_count.copy()
-
+            '''
         self.pos_var_count = tmp.copy()
         for readName, read in self.read_set.items():
             for pos in badPos:
@@ -373,8 +390,8 @@ def variantCall(targetName, paflines, outputCov):
         else:
             query_coord = query_end
         snp_coord, del_region = snpDetector(cigar2, target_coord, query_coord, query_dir)
-        if len(snp_coord)/aln_block_length >= 0.04: # THRESHOLD to remove reads coming from other regions
-            continue
+        #if len(snp_coord)/aln_block_length >= 0.04: # THRESHOLD to remove reads coming from other regions
+        #    continue
         if hasClipping(target_start, target_end, target_length, query_start, query_end, query_length, query_dir):
             log('skipped', query_name, 'for clipping')
             continue
@@ -562,10 +579,7 @@ def selectOvlp(Llines):
         bad = []
         dash = []
         for conn in info:
-            
-            if conn[3] > 270:
-                continue
-
+            log(conn)
             if conn[3] >= 4 and ((conn[1] >= 0.5 and conn[2] >= 0.50) or conn[0] > 4000): # Before was 6000, for ragoo based, adjusted to 4000
                 good.append(conn)
             elif conn[3] > 0 and ((conn[1] >= 0.50 and conn[2] >= 0.50) or conn[0] > 4000):
@@ -771,6 +785,7 @@ def oneConn(graph):
         else:
             conns = sorted(conns)
             outL.append(conns[-1][2])
+    
     return outL
 
 def gfaToNX(Llines):
@@ -982,7 +997,7 @@ def main():
     redName = '.'.join(args.output.split('.')[:-1]) + '.reducted.gfa'
     out2 = open(redName, 'w')
     draw2(args.fasta, Llines, out2, False)
-    exit()
+    #exit()
     if args.partition_list != None:
         nxGraph = gfaToNX(Llines)
         subgraphs = clustering.divide(nxGraph, args.partition_list)
