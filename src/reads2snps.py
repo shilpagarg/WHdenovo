@@ -30,6 +30,9 @@ def read_variants(varFile):
         name,seq = fasta.id, str(fasta.seq)
         snp_name = name.split("|")[0].split("_")[3]
         allele = name.split("|")[0].split("_")[1]
+        snpornot = name.split("|")[0].split("_")[0]
+        if not snpornot == "SNP":
+            continue
         if allele == 'higher':
             allele = 'H'
         elif allele == 'lower':
@@ -38,8 +41,8 @@ def read_variants(varFile):
             sys.stderr.write("Unknown allele: " + allele)
             exit(1)
         rseq = str(Seq.Seq(seq, generic_dna).reverse_complement())
-        variants[seq] = (snp_name, allele)
-        variants[rseq] = (snp_name, allele)
+        variants[seq] = (snp_name, 'f',  allele)
+        variants[rseq] = (snp_name, 'r',  allele)
         varlen = len(seq)
     return varlen
 
