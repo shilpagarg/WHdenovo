@@ -25,8 +25,7 @@ optional arguments:
 def sim(sub, args):
     
     pwd = os.getcwd()
-    whdenovoPath = '/'.join(sys.path[0].split('/')[:-1])
-
+    whdenovoPath = '/'.join(os.path.abspath(__file__).split('/')[:-1])
     family = ['mom1', 'mom2', 'dad1', 'dad2', 'child1', 'child2']
     # ILLUMINA part
     if sub == 'illumina':
@@ -34,13 +33,12 @@ def sim(sub, args):
         mom1FA = args.fasta
         het = args.het
         illuminaOutput = pwd + '/' + args.dir
-        subprocess.run('mkdir -p ' + illuminaOut, shell = True)
+        subprocess.run('mkdir -p ' + illuminaOutput, shell = True)
         if not os.path.exists(mom1FA):
             raise FileNotFoundError(mom1FA + ' not found.')
             sys.exit(1)
     	# Generate haplotypes.
-        simulate_mut = whdenovoPath + '/whdenovo/simulate_mutation.py'
-        subprocess.run('mkdir %s'%illuminaOutput, shell = True	)
+        simulate_mut = whdenovoPath + '/simulate_mutation.py'
         subprocess.call('python3 %s %s %s %s/mom2.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
         subprocess.call('python3 %s %s %s %s/dad1.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
         subprocess.call('python3 %s %s %s %s/dad2.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
@@ -48,8 +46,8 @@ def sim(sub, args):
         subprocess.call('cp %s/dad1.het%s.cov30.fasta %s/child2.het%s.cov30.fasta'%(illuminaOutput, het, illuminaOutput, het), shell = True)
         subprocess.call('cp %s %s/mom1.het%s.cov30.fasta'%(mom1FA, illuminaOutput, het), shell = True)
 
-    	# simulate illumina reads
-        art = whdenovoPath + '/trioasm/art_bin_MountRainier/art_illumina'
+        # simulate illumina reads
+        art = 'art_illumina'
         for i in family:
             subprocess.call('%s  -ss HSXn -sam -i %s/%s.het%s.cov30.fasta -p -l 150 -f 15 -m 200 -s 10 -o %s/%s.het%s.cov30_'%(art, illuminaOutput, i, het, illuminaOutput, i, het), shell = True, stdout=subprocess.PIPE)
 
@@ -92,8 +90,7 @@ def sim(sub, args):
                     raise FileNotFoundError(mom1FA + ' not found.')
                     sys.exit(1)
             # Generate haplotypes.
-            simulate_mut = whdenovoPath + '/whdenovo/simulate_mutation.py'
-            subprocess.run('mkdir %s'%pbccsOutput, shell = True  )
+            simulate_mut = whdenovoPath + '/simulate_mutation.py'
             subprocess.call('python3 %s %s %s %s/mom2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
             subprocess.call('python3 %s %s %s %s/dad1'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
             subprocess.call('python3 %s %s %s %s/dad2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)

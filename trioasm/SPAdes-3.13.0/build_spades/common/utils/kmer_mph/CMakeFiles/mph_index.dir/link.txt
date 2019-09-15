@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmph_index.a  CMakeFiles/mph_index.dir/1.cpp.o
-/usr/bin/ranlib libmph_index.a

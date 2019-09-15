@@ -1,2 +1,0 @@
-/usr/bin/ar qc libsequence.a  CMakeFiles/sequence.dir/sequence_tools.cpp.o
-/usr/bin/ranlib libsequence.a

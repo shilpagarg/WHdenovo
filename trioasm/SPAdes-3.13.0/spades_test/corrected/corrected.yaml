@@ -1,8 +1,0 @@
-- "left reads":
-  - "/mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/spades_test/corrected/ecoli_1K_1.fq.00.0_0.cor.fastq.gz"
-  "orientation": "fr"
-  "right reads":
-  - "/mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/spades_test/corrected/ecoli_1K_2.fq.00.0_0.cor.fastq.gz"
-  "single reads":
-  - "/mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/spades_test/corrected/ecoli_1K__unpaired.00.0_0.cor.fastq.gz"
-  "type": "paired-end"

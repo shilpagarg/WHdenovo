@@ -30,7 +30,8 @@ setup(
 	install_requires = [
 		'xopen',
 		'networkx',
-		'pystream-protobuf'
+		'pystream-protobuf',
+		'Biopython'
 	],
 	extras_require = {
 		'dev': ['Cython', 'pytest', 'sphinx', 'sphinx_issues'],

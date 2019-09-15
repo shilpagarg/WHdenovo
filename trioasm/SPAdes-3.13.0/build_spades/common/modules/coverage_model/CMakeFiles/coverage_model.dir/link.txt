@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcoverage_model.a  CMakeFiles/coverage_model.dir/kmer_coverage_model.cpp.o
-/usr/bin/ranlib libcoverage_model.a

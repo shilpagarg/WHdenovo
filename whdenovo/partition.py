@@ -39,7 +39,7 @@ def run_pipeline(args):
     
     whdenovoPath = '/'.join(sys.path[0].split('/')[:-1])
     whdenovoPath = sys.path[0]
-    vg = "%s/trioasm/vg"%whdenovoPath
+    vg = "vg"
     logging.info('Using vg at: %s'%vg)
     graphaligner = "GraphAligner"
     if args.output != None:
@@ -52,15 +52,18 @@ def run_pipeline(args):
         subprocess.call(['mkdir', tempPath])
         subprocess.call(['mkdir', '%s/illumina'%tempPath])
         subprocess.call(['mkdir', '%s/bc1'%tempPath])
+    else:
+        logging.error('Output directory %s already exits' % tempPath)
+        sys.exit(1)
 
     # spades  ADDED "-m 500" FOR LARGE GENOME
-    #logging.info('bfc error correcting...')
-    #subprocess.call('bfc -t %d -s %s %s 1> %s/cor.1.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina1, tempPath, tempPath), shell = True)
-    #subprocess.call('bfc -t %d -s %s %s 1> %s/cor.2.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina2, tempPath, tempPath), shell = True)
-    #logging.info('bfc log saved at %s/bfc.log'%tempPath)
+    logging.info('bfc error correcting...')
+    subprocess.call('bfc -t %d -s %s %s 1> %s/cor.1.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina1, tempPath, tempPath), shell = True)
+    subprocess.call('bfc -t %d -s %s %s 1> %s/cor.2.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina2, tempPath, tempPath), shell = True)
+    logging.info('bfc log saved at %s/bfc.log'%tempPath)
      
     logging.info('Running spades...')
-    spades_cmd = "python2 %s/trioasm/SPAdes-3.13.0/spades.py -t %d -k %d -m 500 -1 %s/cor.1.fq -2 %s/cor.2.fq --only-assembler -o %s/illumina/" % (whdenovoPath, args.t, args.k, tempPath, tempPath, tempPath)
+    spades_cmd = "spades.py -t %d -k %d -m 500 -1 %s/cor.1.fq -2 %s/cor.2.fq --only-assembler -o %s/illumina/" % (args.t, args.k, tempPath, tempPath, tempPath)
     spades_cmd = spades_cmd.split()
     a = subprocess.call(spades_cmd, shell=False, stdout=subprocess.PIPE)
     if a != 0:

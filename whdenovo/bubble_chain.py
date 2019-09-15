@@ -15,7 +15,6 @@ def dfs(graph, start):
 	return visited
 
 def find_bubble_chains(consec_pairs, locus_branch_mapping):
-	#print('Am I using this code???')	
 	print('the total number of edges %d.' %len(consec_pairs))
 	consec_pairs_tmp = defaultdict(set)
 	
@@ -72,15 +71,6 @@ def find_bubble_chains(consec_pairs, locus_branch_mapping):
 					hashse[j]=1
 
 	print('total number of unitigs', len(unitigs))
-	print(unitigs)
-	nu = 0
-	for u in unitigs:
-		for n in u:
-			if n < 0:
-				print('unitig%d'%nu, locus_branch_mapping[n][0][0][0], 'bubble', )
-			else:
-				print('unitig%d'%nu, n)
-		nu += 1
 	return unitigs
 
 def aux_contigs(unitigs, totalAlnSet):
@@ -179,7 +169,6 @@ def aux_contigs(unitigs, totalAlnSet):
 			for new_g in new_G:
 				if len(new_g) > 2:
 					aux.addConnection(new_g)
-					print('addConnection', read.name, new_g)
 				for n in new_g:
 					unitigs_enddict[n] = 0
 
@@ -243,23 +232,16 @@ def find_contigs(unitigs, AUX, locus_branch_mapping):
 	fcc = 0
 	final_bubble_number = 0
 	useful = []
-	nfc = 0
 	for c in final_ctgs:
 		npc = 0
-		print('oneFC')
 		for n in c:
 			
 			if int(n) < 0:
 				npc += 1
-				print('fc%d'%nfc, locus_branch_mapping[n][0][0][0], 'bubble')
-			else:
-				print('fc%d'%nfc, n)
-				
 		if npc >= 2:
 			final_bubble_number += npc
 			fcc += 1
 			useful.append(c)
-		nfc += 1
 	print(fcc, 'final blocks have at least 2 bubbles')
 	print('with', final_bubble_number, 'bubbles left')
 	return useful
@@ -272,7 +254,6 @@ def group_readset(contig, totalAlnSet, alleles_per_pos, locus_branch_mapping):
 	alleles_per_pos_BLK = dict()
 	for node in contig:
 		if int(node) < 0:
-			print(locus_branch_mapping[int(node)])
 			phaseg_variant += 1
 			bc_variants[int(node)] = phaseg_variant
 			alleles_per_pos_BLK[phaseg_variant] = alleles_per_pos[int(node)]
@@ -282,6 +263,7 @@ def group_readset(contig, totalAlnSet, alleles_per_pos, locus_branch_mapping):
 		for bubble in list(bc_variants.keys()):
 			readset_ind = readset_ind.union(totalAlnSet.bubbleReadMap[sample][bubble])
 		readList_ind = []
+		
 		for read in readset_ind:
 			# Don't partition reads with only one bubbles for now
 			readInfo = [read.name]

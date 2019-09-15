@@ -1,2 +1,0 @@
-/usr/bin/ar qc libgetopt_pp.a  CMakeFiles/getopt_pp.dir/getopt_pp.cpp.o
-/usr/bin/ranlib libgetopt_pp.a

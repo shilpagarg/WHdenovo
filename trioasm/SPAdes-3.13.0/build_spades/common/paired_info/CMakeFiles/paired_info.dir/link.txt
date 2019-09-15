@@ -1,2 +1,0 @@
-/usr/bin/ar qc libpaired_info.a  CMakeFiles/paired_info.dir/distance_estimation.cpp.o CMakeFiles/paired_info.dir/weighted_distance_estimation.cpp.o CMakeFiles/paired_info.dir/smoothing_distance_estimation.cpp.o
-/usr/bin/ranlib libpaired_info.a

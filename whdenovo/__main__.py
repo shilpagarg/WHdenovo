@@ -13,6 +13,7 @@ __version__ = '1.0'
 COMMANDS = ['simulate', 
             'partition', 
             'validate', 
+            'assemble'
             ]
 
 logger = logging.getLogger(__name__)

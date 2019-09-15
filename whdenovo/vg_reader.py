@@ -167,7 +167,6 @@ def reverse_map(locus_file):
 			prev_endsnarl_orientation = current_endsnarl_orientation
 	
 	locus_branch_mapping[locus_count] = per_locus
-	print(locus_branch_mapping)
 	het_count= 0
 	alleles_per_pos = dict()
 	for k,bubble in locus_branch_mapping.items():
@@ -188,7 +187,6 @@ def reverse_map(locus_file):
 			if len(path) > 0:
 				for edge in path:
 					allele_reverse_mapping[edge].append([k, i, len(path), len(bubble)])
-	print(reverse_mapping)
 	return reverse_mapping, allele_reverse_mapping, alleles_per_pos, locus_branch_mapping
 
 class alignmentSets(object):
@@ -235,7 +233,8 @@ class alignmentSets(object):
 				read.addPartial(partial)
 			lastname = partial.name
 		self.fullReadList[sample].append(read)
-
+		print('Sample', sample, 'total read number', len(self.fullReadList[sample]))
+					
 	def depth(self, node):
 		cov = 0
 		for sample in range(len(self.bubbleReadMap)):
@@ -280,14 +279,12 @@ class alignmentSets(object):
 						repeatToRead[n].append((read, sample))
 		print('Repeat information collected')
 		print('Totally %d repetitive nodes/bubbles found'%len(list(repeatCollection.keys())))
-
 		count = 0
 		child_count = 0
 		threshold = 0.3
 		print('lowc:', lowc, 'highc:', highc)
 		for n, c in repeatCollection.items():
 			cov = self.depth(n)
-			print(n, c, cov, c/cov)
 			if c / cov < threshold and cov <= highc and cov >= lowc:
 				for (read, sample) in repeatToRead[n]:
 					try:
@@ -302,7 +299,6 @@ class alignmentSets(object):
 		print('Totally %d reads removed' % count)
 		print('Totally %d child reads removed' % child_count)
 		del repeatToRead
-		
 		for sample in range(len(self.fullReadList)):
 			for read in self.fullReadList[sample]:
 				for partial in read.partials:
@@ -326,18 +322,20 @@ class alignmentSets(object):
 						read.alleles.remove(None)
 					except:
 						break
-
 	def getBubbleReadMap(self):
 		if len(self.bubbleReadMap) == 3:
 			self.bubbleReadMap = [defaultdict(set), defaultdict(set), defaultdict(set)]
 		if len(self.bubbleReadMap) == 1:
 			self.bubbleReadMap = [defaultdict(set)]
 		for sample in range(len(self.fullReadList)):
+			bubblereadlist = set()
 			for read in self.fullReadList[sample]:
 				for partial in read.partials:
 					for node in partial:
 						self.bubbleReadMap[sample][node].add(read)
-		print(self.bubbleReadMap[2][-1])
+						if node < 0:
+							bubblereadlist.add(read)
+			print('Sample', sample, 'has', len(bubblereadlist), 'reads associated with bubble')
 
 	def getEdges(self):
 		edges = set()
@@ -417,9 +415,7 @@ class partial(object):
 				self.path = bubble
 			else:
 				self.path.append(node)
-				print('NoBubblePartial', self.name)
 		else:
-			nb = 0
 			for i in range(len(self.rawMapping)):
 				node = int(self.rawMapping[i]['position']['node_id'])
 				if node in reverse_mapping:
@@ -444,11 +440,8 @@ class partial(object):
 								self.path.append(bubble[1])
 							else:
 								self.path.append(bubble[0])
-					nb += 1
 				else:
 					self.path.append(node)
-			if nb == 0:
-				print('NoBubblePartial', self.name)
 
 	def getAllele(self, allele_reverse_mapping):
 		# Get an allele based variant sequence

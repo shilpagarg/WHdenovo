@@ -1,6 +1,0 @@
-- "left reads":
-  - "/mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/test_dataset/ecoli_1K_1.fq.gz"
-  "orientation": "fr"
-  "right reads":
-  - "/mnt/d/BU_MS_BF/HMS/whdenovo/trioasm/SPAdes-3.13.0/test_dataset/ecoli_1K_2.fq.gz"
-  "type": "paired-end"

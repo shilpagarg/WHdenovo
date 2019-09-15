@@ -1,2 +1,0 @@
-/usr/bin/ar qc libstages.a  CMakeFiles/stages.dir/construction.cpp.o CMakeFiles/stages.dir/simplification.cpp.o
-/usr/bin/ranlib libstages.a
