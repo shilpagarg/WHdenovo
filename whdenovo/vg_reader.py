@@ -167,12 +167,14 @@ def reverse_map(locus_file):
 			prev_endsnarl_orientation = current_endsnarl_orientation
 	
 	locus_branch_mapping[locus_count] = per_locus
+	print(locus_branch_mapping)
 	het_count= 0
+	alleles_per_pos = dict()
 	for k,bubble in locus_branch_mapping.items():
+		alleles_per_pos[k] = len(bubble)
 		if len(bubble) > 1:
 			het_count = het_count +1
 	print('The number of hets:', het_count)
-
 	reverse_mapping = defaultdict(set)
 	allele_reverse_mapping = defaultdict(list)
 	for k, bubble in locus_branch_mapping.items():
@@ -186,8 +188,8 @@ def reverse_map(locus_file):
 			if len(path) > 0:
 				for edge in path:
 					allele_reverse_mapping[edge].append([k, i, len(path), len(bubble)])
-
-	return reverse_mapping, allele_reverse_mapping
+	print(reverse_mapping)
+	return reverse_mapping, allele_reverse_mapping, alleles_per_pos, locus_branch_mapping
 
 class alignmentSets(object):
 	# An object for storing partial alignments from separate individuals.
@@ -210,11 +212,11 @@ class alignmentSets(object):
 		for i in range(len(self.partialList)):
 			self.partialList[i].extend(alignmentSetsObj.partialList[i])
 
-	def postProcessing(self):
+	def postProcessing(self, lowc, highc):
 		for sample in range(len(self.partialList)):
 			self.globalAlign(sample)
 		self.getBubbleReadMap()
-		self.trimRepeat()
+		self.trimRepeat(lowc, highc)
 		self.getBubbleReadMap()
 
 	def globalAlign(self, sample):
@@ -262,7 +264,7 @@ class alignmentSets(object):
 				except:
 					break
 
-	def trimRepeat(self):
+	def trimRepeat(self, lowc, highc):
 		print('Start detecting repeated nodes/bubbles')
 		repeatCollection = defaultdict(int)
 		repeatToRead = defaultdict(list)
@@ -281,14 +283,16 @@ class alignmentSets(object):
 
 		count = 0
 		child_count = 0
-		threshold = 0.1
-		
+		threshold = 0.3
+		print('lowc:', lowc, 'highc:', highc)
 		for n, c in repeatCollection.items():
 			cov = self.depth(n)
-			if c / cov < threshold and cov <= 350 and cov >= 12:
+			print(n, c, cov, c/cov)
+			if c / cov < threshold and cov <= highc and cov >= lowc:
 				for (read, sample) in repeatToRead[n]:
 					try:
 						self.fullReadList[sample].remove(read)
+						print('Removing read', read)
 						count += 1
 						if sample == 2:
 							child_count += 1
@@ -305,7 +309,7 @@ class alignmentSets(object):
 					pL = len(partial)
 					for i in range(pL):
 						cov = self.depth(partial[i])
-						if repeatCollection[partial[i]] / cov >= threshold or cov < 12 or cov > 350:
+						if repeatCollection[partial[i]] / cov >= threshold or cov <= lowc or cov >= highc:
 							partial[i] = None
 					for i in range(pL):
 						try:
@@ -315,7 +319,7 @@ class alignmentSets(object):
 				aL = len(read.alleles)
 				for var in range(aL):
 					cov = self.depth(read.alleles[var][0])
-					if repeatCollection[read.alleles[var][0]] / cov >= threshold or cov < 12 or cov > 350:
+					if repeatCollection[read.alleles[var][0]] / cov >= threshold or cov <= lowc or cov >= highc:
 						read.alleles[var] = None
 				for var in range(aL):
 					try:
@@ -333,6 +337,7 @@ class alignmentSets(object):
 				for partial in read.partials:
 					for node in partial:
 						self.bubbleReadMap[sample][node].add(read)
+		print(self.bubbleReadMap[2][-1])
 
 	def getEdges(self):
 		edges = set()
@@ -341,8 +346,8 @@ class alignmentSets(object):
 				for partial in read.partials:
 					if len(partial) > 1:
 						for i in range(len(partial)-1):
-							edge1 = partial[i], partial[i + 1]
-							edge2 = partial[i + 1], partial[i]
+							edge1 = (partial[i], partial[i + 1])
+							edge2 = (partial[i + 1], partial[i])
 							if edge1 not in edges:
 								edges.add(edge2)
 		return edges
@@ -359,13 +364,20 @@ class fullRead(object):
 		self.name = None
 		self.partials = []
 		self.alleles = []
+		self.query_pos = []
 	def addPartial(self, partial):
-		if self.name != None:
-			assert partial.name == self.name
-		self.name = partial.name
-		self.partials.append(partial.path)
-		self.alleles.extend(partial.alleles)		
-
+		if partial.query_position in self.query_pos:
+			pass
+		else:
+			if self.name != None:
+				assert partial.name == self.name
+			self.name = partial.name
+			self.partials.append(partial.path)
+			self.alleles.extend(partial.alleles)		
+	def __str__(self):
+		return self.name
+	def __repr__(self):
+		return self.name
 class partial(object):
 	# Simply parse a line of json content, and store the information.
 	def __init__(self, jsonLine, reverse_mapping, allele_reverse_mapping):
@@ -379,7 +391,10 @@ class partial(object):
 		self.getPath(reverse_mapping)
 		self.getAllele(allele_reverse_mapping)
 		del self.rawMapping
-
+	def __str__(self):
+		return self.name
+	def __repr__(self):
+		return self.name
 	def parseJson(self, jsonLine):
 		g = json.loads(jsonLine)
 		self.name = g['name']
@@ -396,15 +411,17 @@ class partial(object):
 	def getPath(self, reverse_mapping):
 		# Get a node based path.
 		if len(self.rawMapping) == 1:
-			node = self.rawMapping[0]['position']['node_id']
+			node = int(self.rawMapping[0]['position']['node_id'])
 			if node in reverse_mapping:
 				bubble = list(reverse_mapping[node])
 				self.path = bubble
 			else:
 				self.path.append(node)
+				print('NoBubblePartial', self.name)
 		else:
+			nb = 0
 			for i in range(len(self.rawMapping)):
-				node = self.rawMapping[i]['position']['node_id']
+				node = int(self.rawMapping[i]['position']['node_id'])
 				if node in reverse_mapping:
 					bubble = reverse_mapping[node]
 					if len(bubble) == 1:
@@ -417,7 +434,7 @@ class partial(object):
 					else:
 						bubble = list(bubble)
 						if len(self.path) == 0:
-							nextnode = self.rawMapping[i+1]['position']['node_id']
+							nextnode = int(self.rawMapping[i+1]['position']['node_id'])
 							self.path.append(bubble[0])
 							self.path.append(bubble[1])
 							if list(reverse_mapping[nextnode])[0] == bubble[0]:
@@ -427,8 +444,11 @@ class partial(object):
 								self.path.append(bubble[1])
 							else:
 								self.path.append(bubble[0])
+					nb += 1
 				else:
 					self.path.append(node)
+			if nb == 0:
+				print('NoBubblePartial', self.name)
 
 	def getAllele(self, allele_reverse_mapping):
 		# Get an allele based variant sequence
@@ -436,8 +456,8 @@ class partial(object):
 		prev_locus = -1
 		added = False
 		for i in range(len(self.rawMapping) - 1):
-			edge1 = (self.rawMapping[i]['position']['node_id'], self.rawMapping[i+1]['position']['node_id'])
-			edge2 = (self.rawMapping[i+1]['position']['node_id'], self.rawMapping[i]['position']['node_id'])
+			edge1 = (int(self.rawMapping[i]['position']['node_id']), int(self.rawMapping[i+1]['position']['node_id']))
+			edge2 = (int(self.rawMapping[i+1]['position']['node_id']), int(self.rawMapping[i]['position']['node_id']))
 			if edge1 in allele_reverse_mapping or edge2 in allele_reverse_mapping:
 				if edge1 in allele_reverse_mapping:   
 					#qualities = [10]* reverse_mapping[edge1][0][2]
@@ -470,12 +490,13 @@ def runChunk(jsonLines, sample, reverse_mapping, allele_reverse_mapping, mode, r
 def getChunk(gamFilecache, threadN):
 	NR = len(gamFilecache)
 	if NR % threadN == 0:
-		chunkSize = int(NR / threadN)
+		chunkSize = 10000
 	else:
 		if NR % threadN != 0:
 			chunkSize = NR // threadN + 1
 		else:
 			chunkSize = NR / threadN
+	chunkSize = 10000
 	chunks = []
 	for i in range(threadN):
 		if (i + 1) * chunkSize <= NR: 
@@ -484,8 +505,8 @@ def getChunk(gamFilecache, threadN):
 			chunks.append((i*chunkSize, NR))
 	return chunks
 
-def vg_read(locus_file, gam_file, t):
-	reverse_mapping, allele_reverse_mapping = reverse_map(locus_file)
+def vg_read(locus_file, gam_file, t, lowc, highc):
+	reverse_mapping, allele_reverse_mapping, alleles_per_pos, locus_branch_mapping = reverse_map(locus_file)
 	if len(gam_file) == 3:
 		mode = 'trio'
 	elif len(gam_file) == 1:
@@ -497,16 +518,20 @@ def vg_read(locus_file, gam_file, t):
 		chunkidx = getChunk(filecache, t)
 		m = Manager()
 		results = m.list()
-		pool = []
-		for c in range(t):
-			p = Process(target = runChunk, args = (filecache[chunkidx[c][0]:chunkidx[c][1]], i, reverse_mapping, allele_reverse_mapping, mode, results))
-			p.start()
-			pool.append(p)
-		for p in pool:
-			p.join()
+		p = Pool(t)
+		processes = []
+		for c in range(len(chunkidx)):
+			processes.append(p.apply_async(runChunk, (filecache[chunkidx[c][0]:chunkidx[c][1]], i, reverse_mapping, allele_reverse_mapping, mode, results)))
+			#p = Process(target = runChunk, args = (filecache[chunkidx[c][0]:chunkidx[c][1]], i, reverse_mapping, allele_reverse_mapping, mode, results))
+			#p.start()
+			#pool.append(p)
+		#for p in pool:
+		#	p.join()
+		p.close()
+		p.join()
 		for i in results:
 			totalAlnSet.mergeChunk(i)
-	totalAlnSet.postProcessing()
+	totalAlnSet.postProcessing(lowc, highc)
 	edges = totalAlnSet.getEdges()
 
-	return totalAlnSet, edges
+	return totalAlnSet, edges, alleles_per_pos, locus_branch_mapping

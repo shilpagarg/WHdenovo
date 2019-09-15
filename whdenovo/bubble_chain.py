@@ -14,8 +14,8 @@ def dfs(graph, start):
 			stack.extend(graph[vertex] - set(visited))
 	return visited
 
-def find_bubble_chains(consec_pairs):
-		
+def find_bubble_chains(consec_pairs, locus_branch_mapping):
+	#print('Am I using this code???')	
 	print('the total number of edges %d.' %len(consec_pairs))
 	consec_pairs_tmp = defaultdict(set)
 	
@@ -72,6 +72,15 @@ def find_bubble_chains(consec_pairs):
 					hashse[j]=1
 
 	print('total number of unitigs', len(unitigs))
+	print(unitigs)
+	nu = 0
+	for u in unitigs:
+		for n in u:
+			if n < 0:
+				print('unitig%d'%nu, locus_branch_mapping[n][0][0][0], 'bubble', )
+			else:
+				print('unitig%d'%nu, n)
+		nu += 1
 	return unitigs
 
 def aux_contigs(unitigs, totalAlnSet):
@@ -170,6 +179,7 @@ def aux_contigs(unitigs, totalAlnSet):
 			for new_g in new_G:
 				if len(new_g) > 2:
 					aux.addConnection(new_g)
+					print('addConnection', read.name, new_g)
 				for n in new_g:
 					unitigs_enddict[n] = 0
 
@@ -177,7 +187,7 @@ def aux_contigs(unitigs, totalAlnSet):
 	
 	return AUX
 
-def find_contigs(unitigs, AUX):
+def find_contigs(unitigs, AUX, locus_branch_mapping):
 	consec_pairs_final = defaultdict(set)
 
 	count=0   
@@ -233,28 +243,39 @@ def find_contigs(unitigs, AUX):
 	fcc = 0
 	final_bubble_number = 0
 	useful = []
+	nfc = 0
 	for c in final_ctgs:
 		npc = 0
+		print('oneFC')
 		for n in c:
+			
 			if int(n) < 0:
 				npc += 1
+				print('fc%d'%nfc, locus_branch_mapping[n][0][0][0], 'bubble')
+			else:
+				print('fc%d'%nfc, n)
 				
 		if npc >= 2:
 			final_bubble_number += npc
 			fcc += 1
 			useful.append(c)
+		nfc += 1
 	print(fcc, 'final blocks have at least 2 bubbles')
 	print('with', final_bubble_number, 'bubbles left')
 	return useful
 
-def group_readset(contig, totalAlnSet):
+
+def group_readset(contig, totalAlnSet, alleles_per_pos, locus_branch_mapping):
 
 	bc_variants = dict()
 	phaseg_variant = 0
+	alleles_per_pos_BLK = dict()
 	for node in contig:
 		if int(node) < 0:
+			print(locus_branch_mapping[int(node)])
 			phaseg_variant += 1
 			bc_variants[int(node)] = phaseg_variant
+			alleles_per_pos_BLK[phaseg_variant] = alleles_per_pos[int(node)]
 	readsets = []
 	for sample in range(len(totalAlnSet.bubbleReadMap)):
 		readset_ind = set()
@@ -274,18 +295,21 @@ def group_readset(contig, totalAlnSet):
 			readList_ind.append(readInfo)
 		readsets.append(readList_ind)
 
-	return readsets
+	return readsets, alleles_per_pos_BLK 
 
-def bc(locus_file, phase_input_files, t):
+def bc(locus_file, phase_input_files, t, lowc, highc):
 	print('Input dataset:', locus_file, phase_input_files)
-	totalAlnSet, consec_pairs = vg_read(locus_file, phase_input_files, t)
-	unitigs = find_bubble_chains(consec_pairs)
+	totalAlnSet, consec_pairs, alleles_per_pos, locus_branch_mapping = vg_read(locus_file, phase_input_files, t, lowc, highc)
+	unitigs = find_bubble_chains(consec_pairs, locus_branch_mapping)
 	
 	AUX = aux_contigs(unitigs, totalAlnSet)
-	final_ctgs = find_contigs(unitigs, AUX)
+	final_ctgs = find_contigs(unitigs, AUX, locus_branch_mapping)
 	total_readsets = []
+	alleles_per_pos_RS = []
 	for contig in final_ctgs:
-		readsets = group_readset(contig, totalAlnSet)
+		readsets, alleles_per_pos_BLK = group_readset(contig, totalAlnSet, alleles_per_pos, locus_branch_mapping)
 		total_readsets.append(readsets)
+		alleles_per_pos_RS.append(alleles_per_pos_BLK)
 
-	return total_readsets
+
+	return total_readsets, alleles_per_pos_RS

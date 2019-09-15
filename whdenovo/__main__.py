@@ -2,6 +2,7 @@ import sys
 import importlib
 import logging
 import argparse
+from .args import HelpfulArgumentParser
 #from . import __version__
 #from .args import HelpfulArgumentParser
 
@@ -12,7 +13,6 @@ __version__ = '1.0'
 COMMANDS = ['simulate', 
             'partition', 
             'validate', 
-            
             ]
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,10 @@ def ensure_pysam_version():
 		sys.exit("WhatsHap requires pysam >= 0.8.1")
 
 def main(argv = sys.argv[1:]):
-    parser = argparse.ArgumentParser()
+    all_args = sys.argv
+    print('Running commands: whdenovo', ' '.join(all_args[1:]))
+    #parser = argparse.ArgumentParser()
+    parser = HelpfulArgumentParser(description=__doc__, prog='whdenovo')
     parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
     subparsers = parser.add_subparsers()
     for command_name in COMMANDS:
@@ -67,7 +70,14 @@ def main(argv = sys.argv[1:]):
             args.module.validate(args, subparser)
         del args.subparser
         del args.module
-        module.main(args)
+        if all_args[1] == 'simulate':
+            if len(all_args) >= 3:
+                module.main(all_args[2], args)
+            else:
+                module.main(None, args)
+        else:
+            module.main(args)
 
 if __name__ == '__main__':
-	main()
+    __name__ = 'whdenovo'
+    main()

@@ -32,7 +32,7 @@ from heapq import heappush, heappop
 from itertools import count
 for p in sys.path:
     if 'trioasm' in p:
-        src = p.split('WHdenovo')[0] + 'WHdenovo/src'
+        src = p.split('WHdenovo')[0] + 'WHdenovo/whdenovo'
 sys.path.append(src)
 from bubble_chain import bc
 from multiprocessing import Pool
@@ -290,7 +290,6 @@ def process_readset(Rawreadset, sample):
         for v in r[1:]:
             read.add_variant(v[0], v[1], 1)
         readset.add(read)
-
     readset1 = ReadSet()
     tmp_duplicated = set()
     for read in readset:
@@ -418,9 +417,14 @@ def add_arguments(parser):
            'sequencing reads (BAM/CRAM) or through phased blocks (VCF)') # TODO for ref based  the number is changed
    arg('-p', '--prefix', metavar = 'STR', required = False, help = 'Output partitioning results for each block into files with this prefix.')
    arg('-t', '--threads', metavar = 'INT', type = int, required = False, default = 4, help = 'Number of threads to use. [4]')
-
+   arg('--lowc', metavar = 'INT', type = int, default = 5, help = 'Lowest threshold for coverage to support edges.')
+   arg('--highc', metavar = 'INT', type = int, default = 20, help = 'Highest threshold for coverage to detect repeats.')
 def main(args):
-    total_readsets = bc(args.locus_file, args.phase_input_files, args.threads)
+    total_readsets, alleles_per_pos = bc(args.locus_file, args.phase_input_files, args.threads, args.lowc, args.highc)
+    child_c = 0
+    for b in total_readsets:
+        child_c += len(b[2])    
+    print('after bc step: child readset size', child_c)
     p = Pool(args.threads)
     results = []
     for block_id in range(len(total_readsets)):

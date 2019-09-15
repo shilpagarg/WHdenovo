@@ -36,9 +36,11 @@ def run_pipeline(args):
     
     PID = os.getpid()
     logging.info('PID %d'%PID)
-
+    
     whdenovoPath = '/'.join(sys.path[0].split('/')[:-1])
+    whdenovoPath = sys.path[0]
     vg = "%s/trioasm/vg"%whdenovoPath
+    logging.info('Using vg at: %s'%vg)
     graphaligner = "GraphAligner"
     if args.output != None:
         tempPath = os.getcwd() + '/' + args.output
@@ -52,10 +54,10 @@ def run_pipeline(args):
         subprocess.call(['mkdir', '%s/bc1'%tempPath])
 
     # spades  ADDED "-m 500" FOR LARGE GENOME
-    logging.info('bfc error correcting...')
-    subprocess.call('bfc -t %d -s %s %s 1> %s/cor.1.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina1, tempPath, tempPath), shell = True)
-    subprocess.call('bfc -t %d -s %s %s 1> %s/cor.2.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina2, tempPath, tempPath), shell = True)
-    logging.info('bfc log saved at %s/bfc.log'%tempPath)
+    #logging.info('bfc error correcting...')
+    #subprocess.call('bfc -t %d -s %s %s 1> %s/cor.1.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina1, tempPath, tempPath), shell = True)
+    #subprocess.call('bfc -t %d -s %s %s 1> %s/cor.2.fq 2>> %s/bfc.log'%(args.t, args.size, args.illumina2, tempPath, tempPath), shell = True)
+    #logging.info('bfc log saved at %s/bfc.log'%tempPath)
      
     logging.info('Running spades...')
     spades_cmd = "python2 %s/trioasm/SPAdes-3.13.0/spades.py -t %d -k %d -m 500 -1 %s/cor.1.fq -2 %s/cor.2.fq --only-assembler -o %s/illumina/" % (whdenovoPath, args.t, args.k, tempPath, tempPath, tempPath)
@@ -68,8 +70,8 @@ def run_pipeline(args):
 
     logging.info('Filtering graph...')
     subprocess.call("grep -v '^P' %s/illumina/assembly_graph_with_scaffolds.gfa | awk -F'\\t' '{ if ($2 != $4) print $0}' | %s view --gfa-in - --vg | %s view -g - | awk -F'\\t' '{ if ($2 !=$4) print $0}' > %s/asm1.gfa" % (tempPath , vg, vg, tempPath), shell = True)
-    subprocess.call("python2 %s/src/printnodedegrees_gfa.py %s/asm1.gfa | awk -F' ' '{ if($2 > 70 || $2==0) printf \"%%s\\n\", $1 }' > %s/asm1.wrongnodes"%(whdenovoPath, tempPath, tempPath), shell = True)
-    subprocess.call('python2 %s/src/remove_wrongnodes.py %s/asm1.wrongnodes %s/asm1.gfa %s/illumina/asm1.gfa'%(whdenovoPath, tempPath, tempPath, tempPath), shell = True)
+    subprocess.call("python2 %s/whdenovo/printnodedegrees_gfa.py %s/asm1.gfa | awk -F' ' '{ if($2 > 70 || $2==0) printf \"%%s\\n\", $1 }' > %s/asm1.wrongnodes"%(whdenovoPath, tempPath, tempPath), shell = True)
+    subprocess.call('python2 %s/whdenovo/remove_wrongnodes.py %s/asm1.wrongnodes %s/asm1.gfa %s/illumina/asm1.gfa'%(whdenovoPath, tempPath, tempPath, tempPath), shell = True)
     logging.info('Running snarls...')
     subprocess.call('%s view --gfa-in --vg %s/illumina/asm1.gfa > %s/illumina/asm1.vg' % (vg, tempPath, tempPath), shell = True)
     subprocess.call('%s snarls -t -r %s/illumina/asm1.trans %s/illumina/asm1.vg > %s/illumina/asm1.snarls' % (vg, tempPath, tempPath, tempPath), shell = True)
@@ -85,12 +87,15 @@ def run_pipeline(args):
         a = subprocess.call("%s -t %d -g %s/illumina/asm1.gfa -f %s -a %s/aln.gam --seeds-mum-count 100000 --seeds-mxm-length 10 -C 500000 -b 35" % (graphaligner, args.t, tempPath, args.pacbio[0], tempPath), shell = True, stdout=subprocess.PIPE)
         if a != 0:
             logging.error('Error while running GraphAligner. Exit Code: %d'%a)
-            sys.exit(2) 
-    subprocess.call("ls %s/aln*gam | parallel 'vg view -a {} > {}.json'"%tempPath, shell = True)
+            sys.exit(a) 
+    a = subprocess.call("ls %s/aln*gam | parallel '%s view -a {} > {}.json'"%(tempPath, vg), shell = True)
+    if a != 0:
+        logging.error('Error while converting GAM to JSON. Exit Code: %d'%a)
+        sys.exit(a)
 
     logging.info('Partitioning...')
     if args.ped != None:
-        subprocess.call("cd %s/trioasm/whatshap_trioasm && python -m whatshap phaseg reads %s %s/illumina/asm1.trans %s/aln0.gam.json %s/aln1.gam.json %s/aln2.gam.json -t %d -p %s/bc1/aln > %s/partition.log" % (whdenovoPath, args.ped, tempPath, tempPath, tempPath, tempPath, args.t, tempPath, tempPath), shell = True)
+        subprocess.call("cd %s/trioasm/whatshap_trioasm && python -m whatshap phaseg reads %s %s/illumina/asm1.trans %s/aln0.gam.json %s/aln1.gam.json %s/aln2.gam.json -t %d -p %s/bc1/aln --lowc %d --high %d > %s/partition.log" % (whdenovoPath, args.ped, tempPath, tempPath, tempPath, tempPath, args.t, tempPath, args.lowc, args.highc, tempPath), shell = True)
         subprocess.call("ls %s/bc1/*allreads | parallel -j%d \"awk '\\$3 == 1 {print \\$1}' {} > {}.hp1.reads\"" % (tempPath, args.t), shell = True)
         subprocess.call("ls %s/bc1/*allreads | parallel -j%d \"awk '\\$3 == 0 {print \\$1}' {} > {}.hp0.reads\"" % (tempPath, args.t), shell = True)
         subprocess.call("cat %s/bc1/*hp1.reads | sort | uniq > %s/HP1.reads" % (tempPath,tempPath), shell = True)
@@ -123,6 +128,8 @@ def add_arguments(parser):
     arg('-k', type = int, default = 77 , help = 'K-mer size setting for SPAdes, must be odd and no larger than 128. [77].')
     arg('-s', '--size', type = str, required = True, help = 'Expected genome size, acceptible example: 50k, 24m, 2g.')
     arg('-t', metavar = 'INT', type = int, default = 4, help = "Use multiprocessing in the algorithm, and some steps utilize GNU parallel. [4]")
+    arg('--lowc', metavar = 'INT', type = int, default = 5, help = 'Lowest threshold for coverage to support edges.')
+    arg('--highc', metavar = 'INT', type = int, default = 20, help = 'Highest threshold for coverage to detect repeats.')
 
 def main(args):
     checkStatus(args)
