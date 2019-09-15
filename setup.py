@@ -30,6 +30,7 @@ setup(
 	install_requires = [
 		'xopen',
 		'networkx',
+		'pystream-protobuf'
 	],
 	extras_require = {
 		'dev': ['Cython', 'pytest', 'sphinx', 'sphinx_issues'],
