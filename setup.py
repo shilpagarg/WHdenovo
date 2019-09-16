@@ -4,20 +4,31 @@ import sys
 import os.path
 from setuptools import setup
 import subprocess
+import versioneer
+from distutils.command.build_ext import build_ext as _build_ext
+
+
+cmdclass = versioneer.get_cmdclass()
+
+class build_ext(cmdclass.get('build_ext', _build_ext)):
+	def run(self):
+		print('Start to compile whatshap_trio')
+		install_whtrio = 'cd trioasm/whatshap_trioasm/ && python setup.py build_ext -i'
+		install_whtrio_p = subprocess.call(install_whtrio, shell = True)
+		if install_whtrio_p != 0:
+			print('whatshap_trio compile failed')
+			sys.exit(1)
+		print('Start to compile whatshap')
+		install_whind = 'cd trioasm/whatshap/ && python setup.py build_ext -i'
+		install_whind_p = subprocess.call(install_whind, shell = True)
+		if install_whtrio_p != 0:
+			print('whatshap compile failed')
+			sys.exit(1)
 
 if sys.version_info < (3, 4):
-	sys.stdout.write("At least Python 3.4 is required.\n")
-	sys.exit(1)
-
-#install_whtrio = 'cd trioasm/whatshap_trioasm/ && python setup.py install'
-#install_whtrio_p = subprocess.call(install_whtrio, shell = True)
-#if install_whtrio_p != 0:
-#	sys.exit(1)
-
-#install_whind = 'cd trioasm/whatshap/ && python setup.py install'
-#install_whind_p = subprocess.call(install_whind, shell = True)
-#if install_whtrio_p != 0:
-#	sys.exit(1)
+        print("At least Python 3.4 is required.")
+        sys.exit(1)
+cmdclass['build_ext'] = build_ext
 
 setup(
 	name = 'whdenovo',
@@ -27,6 +38,7 @@ setup(
 	url = 'https://github.com/shilpagarg/WHdenovo',
 	description = 'A graph-based approach to diploid assembly for single samples and trios (In principle, should work for duos).',
 	entry_points={'console_scripts': ['whdenovo = whdenovo.__main__:main']},
+	cmdclass = cmdclass,
 	install_requires = [
 		'xopen',
 		'networkx',

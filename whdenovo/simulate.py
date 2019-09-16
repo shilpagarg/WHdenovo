@@ -5,7 +5,7 @@ import sys, os
 import subprocess
 from subprocess import PIPE
 import argparse
-
+from . import simulate_mutation
 '''
 IMPORTANT: Be sure your input original fasta file is in UNIX fileformat, 
            Otherwise the PBSIM program cannot interpret things properly.
@@ -38,10 +38,13 @@ def sim(sub, args):
             raise FileNotFoundError(mom1FA + ' not found.')
             sys.exit(1)
     	# Generate haplotypes.
-        simulate_mut = whdenovoPath + '/simulate_mutation.py'
-        subprocess.call('python3 %s %s %s %s/mom2.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
-        subprocess.call('python3 %s %s %s %s/dad1.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
-        subprocess.call('python3 %s %s %s %s/dad2.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
+        simulate_mutation.simMut(mom1FA, het, '%s/mom2.het%s.cov30' % (illuminaOutput, het))
+        simulate_mutation.simMut(mom1FA, het, '%s/dad1.het%s.cov30' % (illuminaOutput, het))
+        simulate_mutation.simMut(mom1FA, het, '%s/dad2.het%s.cov30' % (illuminaOutput, het))
+        #simulate_mut = whdenovoPath + '/simulate_mutation.py'
+        #subprocess.call('python3 %s %s %s %s/mom2.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
+        #subprocess.call('python3 %s %s %s %s/dad1.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
+        #subprocess.call('python3 %s %s %s %s/dad2.het%s.cov30'%(simulate_mut, mom1FA, het, illuminaOutput, het), shell = True)
         subprocess.call('cp %s/mom2.het%s.cov30.fasta %s/child1.het%s.cov30.fasta'%(illuminaOutput, het, illuminaOutput, het), shell = True)
         subprocess.call('cp %s/dad1.het%s.cov30.fasta %s/child2.het%s.cov30.fasta'%(illuminaOutput, het, illuminaOutput, het), shell = True)
         subprocess.call('cp %s %s/mom1.het%s.cov30.fasta'%(mom1FA, illuminaOutput, het), shell = True)
@@ -90,10 +93,13 @@ def sim(sub, args):
                     raise FileNotFoundError(mom1FA + ' not found.')
                     sys.exit(1)
             # Generate haplotypes.
-            simulate_mut = whdenovoPath + '/simulate_mutation.py'
-            subprocess.call('python3 %s %s %s %s/mom2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
-            subprocess.call('python3 %s %s %s %s/dad1'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
-            subprocess.call('python3 %s %s %s %s/dad2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
+            simulate_mutation.simMut(mom1FA, het, '%s/mom2.het%s.cov30' % (pbccsOutput, het))
+            simulate_mutation.simMut(mom1FA, het, '%s/dad1.het%s.cov30' % (pbccsOutput, het))
+            simulate_mutation.simMut(mom1FA, het, '%s/dad2.het%s.cov30' % (pbccsOutput, het))    
+            #simulate_mut = whdenovoPath + '/simulate_mutation.py'
+            #subprocess.call('python3 %s %s %s %s/mom2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
+            #subprocess.call('python3 %s %s %s %s/dad1'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
+            #subprocess.call('python3 %s %s %s %s/dad2'%(simulate_mut, mom1FA, het, pbccsOutput), shell = True)
             subprocess.call('cp %s/mom2.fasta %s/child1.fasta'%(pbccsOutput, pbccsOutput), shell = True)
             subprocess.call('cp %s/dad1.fasta %s/child2.fasta'%(pbccsOutput, pbccsOutput), shell = True)
             subprocess.call('cp %s %s/mom1.fasta'%(mom1FA, pbccsOutput), shell = True)

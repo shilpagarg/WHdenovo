@@ -8,6 +8,7 @@ from subprocess import PIPE
 import os, sys, time
 import logging
 import re
+from . import filterGraph
 
 def checkStatus(args):
     if sys.version_info.major != 3:
@@ -73,8 +74,9 @@ def run_pipeline(args):
 
     logging.info('Filtering graph...')
     subprocess.call("grep -v '^P' %s/illumina/assembly_graph_with_scaffolds.gfa | awk -F'\\t' '{ if ($2 != $4) print $0}' | %s view --gfa-in - --vg | %s view -g - | awk -F'\\t' '{ if ($2 !=$4) print $0}' > %s/asm1.gfa" % (tempPath , vg, vg, tempPath), shell = True)
-    subprocess.call("python2 %s/whdenovo/printnodedegrees_gfa.py %s/asm1.gfa | awk -F' ' '{ if($2 > 70 || $2==0) printf \"%%s\\n\", $1 }' > %s/asm1.wrongnodes"%(whdenovoPath, tempPath, tempPath), shell = True)
-    subprocess.call('python2 %s/whdenovo/remove_wrongnodes.py %s/asm1.wrongnodes %s/asm1.gfa %s/illumina/asm1.gfa'%(whdenovoPath, tempPath, tempPath, tempPath), shell = True)
+    filterGraph.flt('%s/asm1.gfa'%tempPath, '%s/illumina/asm1.gfa'%tempPath)
+    #subprocess.call("python2 %s/whdenovo/printnodedegrees_gfa.py %s/asm1.gfa | awk -F' ' '{ if($2 > 70 || $2==0) printf \"%%s\\n\", $1 }' > %s/asm1.wrongnodes"%(whdenovoPath, tempPath, tempPath), shell = True)
+    #subprocess.call('python2 %s/whdenovo/remove_wrongnodes.py %s/asm1.wrongnodes %s/asm1.gfa %s/illumina/asm1.gfa'%(whdenovoPath, tempPath, tempPath, tempPath), shell = True)
     logging.info('Running snarls...')
     subprocess.call('%s view --gfa-in --vg %s/illumina/asm1.gfa > %s/illumina/asm1.vg' % (vg, tempPath, tempPath), shell = True)
     subprocess.call('%s snarls -t -r %s/illumina/asm1.trans %s/illumina/asm1.vg > %s/illumina/asm1.snarls' % (vg, tempPath, tempPath, tempPath), shell = True)

@@ -52,10 +52,9 @@ def insert_mutations(ref, sites):
     return "".join(new_seq_list), pos_nuc_tuples
 
 def usage():
-    print("simple_mutator.py <genomeFA> <divergence> [optional basename]")
+    print("simulate_mutation.py <genomeFA> <divergence> [optional basename]")
 
-if __name__ == "__main__":
-
+def simMut(genomeFA, divergence, optBase = ''):
     ref_d = {}
     mod_d = {}
     len_d = {}
@@ -64,16 +63,16 @@ if __name__ == "__main__":
     vcf_d = {}
 
     ## Read in HPV16 ref
-    fa = SeqIO.parse(sys.argv[1], "fasta")
+    fa = SeqIO.parse(genomeFA, "fasta")
     for rec in fa:
         ref_d[rec.id] = str(rec.seq)
     ## read divergence
-    div = float(sys.argv[2]) / float(100)
+    div = float(divergence) / float(100)
 
     ## optional basename
     namebase = ""
-    if len(sys.argv) > 3:
-        namebase = str(sys.argv[3])
+    #if len(sys.argv) > 3:
+    namebase = str(optBase)
 
     ## Calculate number of mutations to insert
     len_d = {i : len(ref_d[i]) for i in ref_d}
@@ -107,5 +106,6 @@ if __name__ == "__main__":
                 for s in vcf_d[i]:
                     vcfi.write( "\t".join([str(t) for t in s]) + "\n")
     
-
+if __name__ == '__main__':
+    simMut(sys.argv[1], sys.argv[2], sys.argv[3])
 
