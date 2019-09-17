@@ -100,7 +100,7 @@ def run_pipeline(args):
 
     logging.info('Partitioning...')
     if args.ped != None:
-        subprocess.call("cd %s/trioasm/whatshap_trioasm && python -m whatshap phaseg reads %s %s/illumina/asm1.trans %s/aln0.gam.json %s/aln1.gam.json %s/aln2.gam.json -t %d -p %s/bc1/aln --lowc %d --high %d > %s/partition.log" % (whdenovoPath, args.ped, tempPath, tempPath, tempPath, tempPath, args.t, tempPath, args.lowc, args.highc, tempPath), shell = True)
+        subprocess.call("whatshap_tri phaseg reads %s %s/illumina/asm1.trans %s/aln0.gam.json %s/aln1.gam.json %s/aln2.gam.json -t %d -p %s/bc1/aln --lowc %d --high %d > %s/partition.log" % (whdenovoPath, args.ped, tempPath, tempPath, tempPath, tempPath, args.t, tempPath, args.lowc, args.highc, tempPath), shell = True)
         subprocess.call("ls %s/bc1/*allreads | parallel -j%d \"awk '\\$3 == 1 {print \\$1}' {} > {}.hp1.reads\"" % (tempPath, args.t), shell = True)
         subprocess.call("ls %s/bc1/*allreads | parallel -j%d \"awk '\\$3 == 0 {print \\$1}' {} > {}.hp0.reads\"" % (tempPath, args.t), shell = True)
         subprocess.call("cat %s/bc1/*hp1.reads | sort | uniq > %s/HP1.reads" % (tempPath,tempPath), shell = True)

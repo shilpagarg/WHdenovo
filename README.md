@@ -8,15 +8,6 @@ Conda installation
 conda install -c bioconda whdenovo
 ```
 
-Developer installation
-```
-wget <release>.tar.gz
-tar -xvzf <release>.tar.gz
-cd WHdenovo
-python setup.py install
-```
-If 
-
 ### Data Simulation
 
 For simulating Illumina data:

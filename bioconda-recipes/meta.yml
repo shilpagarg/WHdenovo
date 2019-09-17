@@ -1,0 +1,61 @@
+{% set name = "WHdenovo" %}
+{% set version = "1.0" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  git_url: https://github.com/shilpagarg/WHdenovo.git
+  git_tag: master
+
+build:
+  entry_points:
+    - whdenovo = whdenovo.__main__:main
+
+requirements:
+  build:
+    - git
+    - make
+    - cmake
+    - cython
+    - {{ compiler('cxx') }}
+  host:
+    - python
+    - pip
+    - cython
+    - setuptools
+    - setuptools_scm
+    - networkx
+    - xopen
+    - pbsim
+    - Biopython
+    - pystream-protobuf
+    - pysam
+    - pyvcf
+    - pyfaidx
+  run:
+    - python
+    - networkx
+    - xopen
+    - pbsim
+    - parallel
+    - Biopython
+    - pystream-protobuf
+    - pysam
+    - pyvcf
+    - pyfaidx
+test:
+  commands:
+    - whdenovo -h
+    - whatshap_tri --help > /dev/null
+    - whatshap_ind --help > /dev/null
+
+about:
+  home: https://github.com/shilpagarg/WHdenovo
+  summary: 'A cost-effective approach to diploid assembly for single samples and trios.'
+  description: |
+    A cost-effective approach to diploid assembly for single samples and trios. This is still in early stage of development.
+  dev_url: https://github.com/shilpagarg/WHdenovo
+  doc_url: https://github.com/shilpagarg/WHdenovo/blob/master/README.md
+
