@@ -5,7 +5,7 @@ A cost-effective approach to diploid assembly for single samples and trios. It i
 
 Conda installation
 ```
-conda install -c bioconda whdenovo
+conda install -c shilpagarg whdenovo
 ```
 
 ### Data Simulation
