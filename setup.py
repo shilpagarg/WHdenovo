@@ -18,12 +18,6 @@ class build_ext(cmdclass.get('build_ext', _build_ext)):
 		if install_whtrio_p != 0:
 			print('whatshap_trio compile failed')
 			sys.exit(1)
-		print('Start to compile whatshap')
-		install_whind = 'cd trioasm/whatshap/ && python setup.py build_ext -i'
-		install_whind_p = subprocess.call(install_whind, shell = True)
-		if install_whtrio_p != 0:
-			print('whatshap compile failed')
-			sys.exit(1)
 
 if sys.version_info < (3, 4):
         print("At least Python 3.4 is required.")
