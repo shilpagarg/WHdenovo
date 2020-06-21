@@ -68,3 +68,7 @@ whdenovo validate -p out/path -t <tagged.reads.txt>
 An example for tagged.reads.txt is at test/haplotagged.reads.txt, which should include the HP tag and PS tag from haplotagged BAM file.
 ***
 We acknowledge the support of dependencies such as [bfc](https://github.com/lh3/bfc), [SPAdes](http://cab.spbu.ru/software/spades/), [vg](https://github.com/vgteam/vg) and [GraphAligner](https://github.com/maickrau/GraphAligner).
+
+### Citations
+1. A graph-based approach to diploid genome assembly. [Link](https://doi.org/10.1093/bioinformatics/bty279)
+2. A haplotype-aware de novo assembly of related individuals using pedigree sequence graph. [Link] (https://doi.org/10.1093/bioinformatics/btz942)
