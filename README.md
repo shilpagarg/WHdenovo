@@ -71,4 +71,4 @@ We acknowledge the support of dependencies such as [bfc](https://github.com/lh3/
 
 ### Citations
 1. A graph-based approach to diploid genome assembly. [Link](https://doi.org/10.1093/bioinformatics/bty279)
-2. A haplotype-aware de novo assembly of related individuals using pedigree sequence graph. [Link] (https://doi.org/10.1093/bioinformatics/btz942)
+2. A haplotype-aware de novo assembly of related individuals using pedigree sequence graph. [Link](https://doi.org/10.1093/bioinformatics/btz942)
